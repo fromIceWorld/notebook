@@ -1,22 +1,23 @@
 #### 1-main.ts
 
-```javascript
+```typescript
 platformBrowserDynamic().bootstrapModule(AppModule)
   .catch(err => console.error(err));
 `------总结--------`
-platformBrowserDynamic：收集provider，并用PlatformRef【provider】 创建平台实例， 调用PlatformRef的 bootstrapModule函数 加载核心app.module【业务入口】
+`platformBrowserDynamic`：
+收集provider,【收集程序运转需要的依赖】
+用PlatformRef【provider之一】 创建平台实例【browser平台】， 
+调用PlatformRef的 bootstrapModule函数 加载核心app.module【业务入口】
 
 `--------`
-platformBrowserDynamic：平台(platform)
-bootstrapModule函数:调用后可根据平台和模块构造出应用程序(application)
+bootstrapModule函数:调用后可根据平台【browser】和依赖模块【providers】构造出应用程序(application)实例：applicationRef
 
 ```
 
 #### 2-platformBrowserDynamic
 
 ```javascript
-`平台浏览器核心动态`
-platformBrowserDynamic：由 createPlatformFactory 【创建平台实例的工厂函数】接收三个值构造
+【平台浏览器核心动态】:`由createPlatformFactory构造`
 
 @params platformCoreDynamic:平台核心动态
 @params 'browserDynamic' :平台标志
@@ -42,44 +43,44 @@ INTERNAL_BROWSER_DYNAMIC_PLATFORM_PROVIDERS ：[
   	{	provide: PLATFORM_ID, useValue: 'browser'},
     ]
 `依赖`：
-    COMPILER_OPTIONS:       编译配置`<InjectionToken>实例`;
-    PLATFORM_ID：           平台ID`<InjectionToken>实例`;
+    COMPILER_OPTIONS:       编译配置信息`<InjectionToken>实例`;
+    PLATFORM_ID：           带value标记的平台ID`<InjectionToken>实例`;
 	PLATFORM_INITIALIZER:   平台初始化时执行的函数`<InjectionToken>实例`;
 	DOCUMENT:               浏览器document`<InjectionToken>实例`;
 **
 `核心:createPlatformFactory函数 和 平台依赖`
  
  `终`   
- 在platformBrowserDynamic 阶段会收集所有的依赖providers，之后会用 PlatformRef provider 创建平台实例，在创建平台实例后
+ 在platformBrowserDynamic 阶段会收集所有的依赖providers，例如【初始化平台依赖，Dom适配器依赖，document依赖】，
+之后会用 PlatformRef【provider】 创建平台实例，在创建平台实例后，引导AppModule应用。
 ```
 
 ##### 2.1-platformCoreDynamic
 
 ```javascript
-`【平台核心动态】`
+【平台核心动态】:`由createPlatformFactory构造`
+
+@params platformCore :平台核心
+@params 'coreDynamic' :平台标志
+@params 平台核心依赖:[
+              {provide: COMPILER_OPTIONS, useValue: {}, multi: true},
+              {provide: CompilerFactory, useClass: JitCompilerFactory, deps: [COMPILER_OPTIONS]},
+            ] 
+
 const platformCoreDynamic = createPlatformFactory(platformCore, 'coreDynamic', [
     { provide: COMPILER_OPTIONS, useValue: ɵ0, multi: true },
     { provide: CompilerFactory, useClass: JitCompilerFactory, deps: [COMPILER_OPTIONS] },
 ]);
-。platformCore                  //平台核心
-。'coreDynamic'                 //标志
-。平台核心依赖：[
-              {provide: COMPILER_OPTIONS, useValue: {}, multi: true},
-              {provide: CompilerFactory, useClass: JitCompilerFactory, deps: [COMPILER_OPTIONS]},
-            ]            
+
 `依赖`：
     COMPILER_OPTIONS：  编译配置`<InjectionToken>实例`
-	CompilerFactory：   编译的工厂函数 `函数CompilerFactory`
-    
-**注：
-核心:createPlatformFactory函数
-platformBrowserDynamic[2] 和 platformCoreDynamic[2.1] 都是由【createPlatformFactory构造】
+	CompilerFactory：   编译工厂函数 `函数CompilerFactory`
 ```
 
 ###### 2.1.1-platformCore
 
 ```typescript
-【平台核心】
+【平台核心】:`由createPlatformFactory构造`
 const platformCore = createPlatformFactory(null, 'core', _CORE_PLATFORM_PROVIDERS);
 
 null:无更深依赖
@@ -95,8 +96,6 @@ _CORE_PLATFORM_PROVIDERS：[
     PlatformRef            平台构造函数`函数 PlatformRef`;
     TestabilityRegistry    ？？？`函数 TestabilityRegistry`;
     Console                console函数`函数 Console`;
-**注
-这个也是由 createPlatformFactory 构造【2，2.1，2.1.1都是由其构造】
 ```
 
 #### 2.*-createPlatformFactory
@@ -106,8 +105,7 @@ _CORE_PLATFORM_PROVIDERS：[
 
 	先创建【平台核心:platformCore,1级】，
     再创建【平台核心动态:platformCoreDynamic，2级】，
-    再创建【平台浏览器动态:platformBrowserDynamic，3级】，最后生成：
-	const platformBrowserDynamic = [platformCoreDynamic[platformCore]]
+    再创建【平台浏览器动态:platformBrowserDynamic，3级】，最后生成合并后的工厂函数
 
 export function createPlatformFactory(
     parentPlatformFactory: ((extraProviders?: StaticProvider[]) => PlatformRef)|null,         name: string,
@@ -207,6 +205,7 @@ createPlatform(Injector.create(
  );
 
 `**注`
+Injector.create将所有依赖providers 合并到一起，作为参数在 createPlatform 时传入进行创建平台。
 
 
 《所有模块在编译阶段会被合并，所以导入和被导入模块之间不存在任何层级关系》
@@ -225,7 +224,7 @@ createPlatform(Injector.create(
 
 abstract class Injector {
     static THROW_IF_NOT_FOUND = THROW_IF_NOT_FOUND = {};
-    static NULL: Injector = new NullInjector();
+    static NULL: Injector = new NullInjector(); //无injector
 	static __NG_ELEMENT_ID__ = -1;
 
     static create(options, parent) {
@@ -253,23 +252,6 @@ export class NullInjector implements Injector {
 **else逻辑  StaticInjector(providers, "", 'Platform: core')
 --附录分析【StaticInjector】
 ```
-
-###### 2.2.1-new NullInjector()
-
-```typescript
-export class NullInjector implements Injector {
-  get(token: any, notFoundValue: any = THROW_IF_NOT_FOUND): any {
-    if (notFoundValue === THROW_IF_NOT_FOUND) {
-      const error = new Error(`NullInjectorError: No provider for ${stringify(token)}!`);
-      error.name = 'NullInjectorError';
-      throw error;
-    }
-    return notFoundValue;
-  }
-}
-```
-
-
 
 ##### 2.3-*createPlatform(终)
 
@@ -317,7 +299,7 @@ class PlatformRef{
   	constructor(private _injector: Injector) {}
 
     bootstrapModuleFactory(){}
-    bootstrapModule(){}   //引导挨app.module
+    bootstrapModule(){}   //引导启动app.module
     _moduleDoBootstrap(){}
     onDestroy(){}
     get injector(){}
@@ -354,6 +336,7 @@ export function assertPlatform(requiredToken: any): PlatformRef {
 ##### 2.6-getPlatform
 
 ```typescript
+返回平台实例
 export function getPlatform(): PlatformRef|null {
   return _platform && !_platform.destroyed ? _platform : null;
 }
