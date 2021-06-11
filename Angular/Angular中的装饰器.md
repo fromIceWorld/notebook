@@ -80,6 +80,75 @@ AppModule.__annotations__ = [{providers,import,declarations,bootstrap...}].
 
 
 
+
+
+#### @Input
+
+`const ɵ6 = (bindingPropertyName) => ({ bindingPropertyName });`
+
+`const Input = makePropDecorator('Input', ɵ6);`
+
+##### makePropDecorator【部分装饰器的通用函数】
+
+```typescript
+@params 名称   'Input'
+@params 属性   (bindingPropertyName) => ({ bindingPropertyName }) 
+                     //确定返回属性key：bindingPropertyName
+@params 父类
+@params 附加处理
+
+function makePropDecorator(name, props, parentClass, additionalProcessing) {
+    return noSideEffects(() => {
+        const metaCtor = makeMetadataCtor(props);
+        function PropDecoratorFactory(...args) {
+            if (this instanceof PropDecoratorFactory) {
+                metaCtor.apply(this, args);
+                return this;
+            }
+            const decoratorInstance = new PropDecoratorFactory(...args);
+            function PropDecorator(target, name) {
+                const constructor = target.constructor;
+                // Use of Object.defineProperty is important because it creates a non-enumerable property
+                // which prevents the property from being copied during subclassing.
+                const meta = constructor.hasOwnProperty(PROP_METADATA) ?
+                    constructor[PROP_METADATA] :
+                    Object.defineProperty(constructor, PROP_METADATA, { value: {} })[PROP_METADATA];
+                meta[name] = meta.hasOwnProperty(name) && meta[name] || [];
+                meta[name].unshift(decoratorInstance);
+                if (additionalProcessing)
+                    additionalProcessing(target, name, ...args);
+            }
+            return PropDecorator;
+        }
+        if (parentClass) {
+            PropDecoratorFactory.prototype = Object.create(parentClass.prototype);
+        }
+        PropDecoratorFactory.prototype.ngMetadataName = name;
+        PropDecoratorFactory.annotationCls = PropDecoratorFactory;
+        return PropDecoratorFactory;
+    });
+}
+```
+
+##### makeMetadataCtor
+
+```typescript
+元属性的构造函数
+接收属性，经过props过滤后返回特定属性
+function makeMetadataCtor(props) {
+    return function ctor(...args) {
+        if (props) {
+            const values = props(...args);
+            for (const propName in values) {
+                this[propName] = values[propName];
+            }
+        }
+    };
+}
+```
+
+
+
 #### @Directive
 
 [`selector?`](https://angular.cn/api/core/Directive#selector)
