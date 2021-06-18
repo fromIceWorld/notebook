@@ -1,8 +1,36 @@
-# ivy
+# ivy模式下的编译
 
 ```
 方式：使用增量DOM（区别于虚拟DOM）
 
+```
+
+# component
+
+```typescript
+初始阶段会为组件添加 static 静态属性`ɵcmp`【配置get特性】，在使用`ɵcmp`时触发get，对组件进行编译。
+`providers属性`：编译后给feature添加函数【函数内部会给`ɵcmp`添加providersResolver解析函数，在某一阶段会传入组件的`ɵcmp`和 providersResolver 函数，对providers解析】
+`ngOnChanges`ngOnChanges生命周期也会在 feature
+feature：与 providers，viewProviders，NgOnChanges属性相关，与【usesInheritance,fullInheritance】也相关
+```
+
+
+
+# 关于View
+
+```typescript
+`1.` LView、TView.data
+`2.` bloom filter
+ivy 引入 LView：储存所有与操作有关的数据
+    引入 TView.data:储存与LView有关的静态数据
+    两者关系：LView 与 TView.data是拥有相同长度的数组，对应索引相关联,需要组合起来才能得到完整的View
+```
+
+## LView
+
+```
+[0-19]:储存固定的数据
+[20-]:储存component的动态数据
 ```
 
 
@@ -202,7 +230,7 @@ _creationCodeFns：创建创建指令集函数的代码token存储位置【根�
 _updateCodeFns：创建更新指令集函数的代码token存储位置【根据指令index，tag，属性index更新Element节点】
 _dataIndex:滚动记录节点的位置【references/pipe也会+1】，在creationInstruction和updateInstructionWithAdvance时使用
 			【与 NgComponentDef.decls属性相关】
-_bindingSlots：绑定插槽计数【pipe计数,[ngStyle],[ngClass]计数】
+_bindingSlots：绑定插槽计数【pipe计数,[ngStyle],[ngClass]计数,插值表达式计数】
 _pureFunctionSlots：【pipe增加的数量【pipe.arg+2】,】
 					绑定计数会添加到_pureFunctionSlots,处理更新指令时，使用正确的插槽偏移量生成纯函数指令
 _ngContentReservedSlots：投影视图
@@ -246,13 +274,15 @@ slotOffset:插槽偏移量
 
 ```typescript
 组件在挂载阶段会生成 componentFactory（包括 def，type，selector，module）
-componentFactory.create 创建 `rootTView/rootLView` 再创建组件view(LView) 
+componentFactory.create 创建 `rootTView/rootLView` 再创建组件view(LView) 【组件view 被rootView包裹的意义？？】
 ```
 
 ### `8.`componentFactory.create
 
 ```typescript
 创建 `hostRNode`，`rootTView/rootLView`，`rootContext`
+
+`1.` 创建rootViewInjector【链式Injector】`依赖注入的层级关系`
 
 enterView/leaveView 操作instructionState.lFrame 维护指令状态[LView,TView]和 层级关系
 
@@ -283,7 +313,7 @@ enterView/leaveView 操作instructionState.lFrame 维护指令状态[LView,TView
 ### `8.1`   createRootComponentView
 
 ```typescript
-创建根组件视图 和 根组件 node【创建组件视图，挂载到rootLView的对应节点上】
+创建根组件视图 和 根组件 node【创建组件视图，挂载到rootLView的【HEADER_OFFSET】节点上】
 
 @params rNode： view 的宿主节点<app-root>
 @params def  ： 组件的def
@@ -298,8 +328,10 @@ rootTView
     componentView = createLView(rootView, getOrCreateTComponentView(def),...) //创建 component的LView，TView
                             
 
-3.初次创建  markAsComponentHost(tView, tNode):将tNode作为 rootTView的宿主。【rootTView.components.push(tNode.index)】
-          initTNodeFlags(tNode, rootView.length, 1)【初始化TNode 的flag，directiveStart】
+3.初次创建    `1.` diPublicInInjector 【设置boolean filter，设置指令token 存放位置[mask]，再将mask放进TView.data】                      
+            `2.`  markAsComponentHost(tView, tNode):将tNode作为 rootTView的宿主。                
+                                 【rootTView.components.push(tNode.index)】
+            `3.` initTNodeFlags(tNode, rootView.length, 1)【初始化TNode 的flag，directiveStart】
 
  
           
@@ -516,5 +548,33 @@ importExpr 引用 ExternalExpr 构造表达式,再调用 父级 Expression 的�
 @params type  
 @params sourceSpan 源地址
 @params pure
+```
+
+# 编译BoundText
+
+`编译绑定数据的text`
+
+```typescript
+对于绑定数据的text文件：
+`1.` 先建立文本 index相关的`创建`指令
+`2.` 再用  `ValueConverter` 更新绑定 _bindingSlots
+`3.` 再建立 `advance` 和`更新`指令
+```
+
+
+
+# 额外的知识
+
+## bloom filters
+
+```typescript
+中文名称：`布隆过滤器`
+diPublicInInjector 时使用；
+核心原理：元素集合，超大的位数组和n个哈希函数
+`1.` 将位数组每一位都初始化为0：[0，0，0，0，0，......]
+`2.` 将元素依次通过n个哈希函数进行映射，每次映射产生一个哈希值，对应数组上一个点，将数组位置置为1
+`3.` 当查询一个未知元素是否位于集合时，将未知元素通过哈希函数进行映射，看哈希值是否存在数组中
+`4.` 存在误判率
+
 ```
 

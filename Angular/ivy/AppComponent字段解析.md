@@ -109,7 +109,8 @@ bindingStartIndex：与decls 有关
 firstChild：第一个TNode
 data:[  //TView.data 与 LView 映射
     ...
-    '20':tNode
+    '20':
+    [`预定8位`]：生成布隆过滤器，存储mask
 ]
 components:[index],记录组件在LView的index值
 
@@ -130,7 +131,8 @@ pipeRegistry：与directive同来源
 
 ```
 TNode 存储节点的数据(attribute, tagname,style....)
-
+      providerIndexes
+      directiveStart
 ```
 
 ### compRef
@@ -145,6 +147,14 @@ TNode 存储节点的数据(attribute, tagname,style....)
 @params _tNode         <#host>
 
 在 ApplicationRef._loadComponent阶段,检查更新【内部进行tick检查】
+```
+
+### ɵcmp
+
+```
+{
+	feature：【解析指令的providers，并将其发布到DI系统】
+}
 ```
 
 

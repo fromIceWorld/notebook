@@ -1,7 +1,7 @@
-# ivy编译
+# ivy模式
 
 ```typescript
-`核心`：「Decorator as Compiler」,在「装饰器」应用的过程中即完成了对相应类型的编译设置，不再具备独立的编译阶段
+`核心`：「Decorator as Compiler」,在「装饰器」应用的过程中即完成了对相应类型的编译设置，不再具备独立的编译阶段【装饰器解析阶段,设置class 的静态属性的特性[get],在获取静态属性时，触发get,编译对应的模块/组件/注入/管道/参数.....】
 ```
 
 
@@ -12,8 +12,13 @@
 `浏览器`：
 [
    {provide: InjectionToken, useValue: 'browser'},
-   {provide: InjectionToken, useValue: initDomAdapter, multi: true}
+   {provide: InjectionToken(Initializer), useValue: initDomAdapter, multi: true}
    {provide: InjectionToken, useFactory: _document, deps: Array(0)}
+]
+`coreDynamic`:
+[
+    {provider:InjectionToken(compilerOptions),useValue:{}},
+    {provider:CompilerFactory,useClass:JitCompilerFactory,deps:[compilerOptions]}
 ]
 `平台核心`
 [
@@ -21,9 +26,11 @@
     {provide: TestabilityRegistry},
     {provide: Console},
 ]
-
-platformBrowserDynamic() 收集各层级依赖【浏览器依赖，平台依赖，核心依赖】,存放到`PlatformRef`中的`_injector`中。返回
-`PlatformRef实例`
+`此阶段 是平台依赖注入，最顶级为NullInjector`【R3Injector,是依赖注入器】
+    
+platformBrowserDynamic() 收集各层级依赖【浏览器依赖，平台依赖，核心依赖】,存放到`PlatformRef`中的`_injector`中。
+1. 获取 `Initializer`,运行初始化平台
+2. 返回`PlatformRef实例`
 ```
 
 #### .bootstrapModule(AppModule)
@@ -39,7 +46,8 @@ platformBrowserDynamic() 收集各层级依赖【浏览器依赖，平台依赖�
 @options     配置
 @moduleType  AppModule
 
-生成 NgModuleFactory$1 实例，同时注册模块的 imports。【AppModule的 BrowserModule 和 业务模块】
+生成 NgModuleFactory$1 实例，内部注册模块的 imports[会编译所有的imports模块],【AppModule的 BrowserModule,commonModule 和 业务模块】
+
 `NgModuleFactory$1`：{
     moduleType：AppModule,
 }
@@ -54,14 +62,81 @@ platformBrowserDynamic() 收集各层级依赖【浏览器依赖，平台依赖�
 #### bootstrapModuleFactory
 
 ```typescript
-`属于 PlatformRef实例`
-获取 `ngZone` 使后续步骤 运行在 ngZone 上下文。
+`属于 PlatformRef实例的方法`
+`1.` 创建 ngZone 的依赖注入 = [{ provide: NgZone, useValue: ngZone }]
+`2.` 获取 `ngZone` 使应用运行在 ngZone 上下文。
+`3.` 创建 moduleRef：{
+        parent：ngZoneInjector,
+        _r3Injector:存储从AppModule起始的模块的链式依赖【imports，providers】
+        _bootstrapComponents:[class]
+        componentFactoryResolver：组件解析函数
+        destroyCbs:[销毁时回调]
+        injector：自身
+        instance:模块实例
+}
+`4.` this._moduleDoBootstrap(moduleRef)
 ```
+
+##### _moduleDoBootstrap
+
+```typescript
+@params moduleRef
+从moduleRef的依赖中 取出 `ApplicationRef` //应用
+如果有引导组件(_bootstrapComponents)：循环执行 ApplicationRef.bootstrap(fn)，挂载组件
+没有引导组件，就使用 moduleRef.instance.ngDoBootstrap【需要在AppModule中自定义ngDoBootstrap去引导启动】
+```
+
+##### bootstrap【ApplicationRef引导组件】
+
+```typescript
+@params componentOrFactory 
+`1.` 根据传入的参数判断 是否需要解析成 componentFactory：
+	    正常情况下需要获取componentDef,生成 componentFactory
+`2.` compRef = componentFactory.create(Injector.NULL, [], selectorOrNode, ngModule) 
+     // 生成组件实例，
+     // 创建视图链式依赖注入   
+`3.` this._loadComponent(compRef)
+
+compRef:{
+    _rootLView: 根 LView，记录组件的LView 和 组件的上下文【包裹一层的意义】
+    _tNode:     根 Node，虚拟节点【存在的意义？？？】 
+    componentType:组件class
+    hostView: RootViewRef【】
+    instance: 组件实例，是视图的上下文
+    location:存有视图的原生节点(nativeElement)【ElementRef 可获取视图的DOM】
+}
+```
+
+###### this._loadComponent(compRef)
+
+```typescript
+this 指向-> `ApplicationRef`
+`1.` 将 compRef 存入 ApplicationRef 的_views中。
+`2.` this.tick(); _views循环执行 view.detectChanges()，执行变更检测
+
+`ApplicationRef`:{
+    _views:[RootViewRef]
+}
+```
+
+
+
+
+
+
+
+
+
+
 
 #####  ngZone 上下文
 
 ```typescript
-获取 AppModule 的 `moduleRef`
+根据ngZone 的provider和应用的_Injector,创建有父级的 ngZoneInjector 小型注入器，供创建模块实例时使用。
+
+获取 AppModule 的 `moduleRef`：
+moduleRef = moduleFactory.create(ngZoneInjector);
+
 初始化应用【运行 `ApplicationInitStatus`provider 】
 ```
 
@@ -258,5 +333,45 @@ compileNgModuleDefs(
 `source：class _Tokenizer`：解析 html 的标签/属性名称/text，分割为token。
 `source：class Parser`：合并 连续的text，构造 `_TreeBuilder`
 `source：class _TreeBuilder`：引用token 生成 element 数据对象【Element$1】
+```
+
+## 依赖注入_R3Injector
+
+`ivy使用 R3Injector 依赖注入`
+
+```typescript
+R3Injector `1.` root依赖注入 
+           `2.` 模块级依赖注入
+           `3.` 组件级依赖注入【providers/viewproviders】
+`2.`
+模块的provider中配置的服务注入，会存入 `injector.records`中，类型如下:
+【key:服务class,value:{
+    factory: 【IndexService_Factory(t) {return new (t || jit_IndexService_0)();}】
+    muti:
+    value:{}
+}】          
+`3.`
+组件的依赖注入是在 getOrCreateNodeInjectorForNode时，确定依赖索引injectorIndex，运行diPublicInInjector【布隆过滤器】，存储服务mask位置
+
+
+在`模块实例化时`会创建依赖[R3Injector],递归处理imports 和providers,存储到 `injector.records`
+```
+
+### R3Injector
+
+```typescript
+class R3Injector {
+	injectorDefTypes：依赖的所有模块【包括模块的依赖的依赖及模块自身】,
+	records: 存储所有的依赖,
+	parent：上级依赖
+    _destroyed:依赖是否销毁
+    scope:'root'
+    source:'AppModule'
+	onDestroy：在records中获取记录时，存储有 `ngOnDestroy`函数属性 的记录
+    
+	dedupStack：存储模块，判断是否重复依赖
+
+   constructor(def, additionalProviders, parent, source = null)
+}
 ```
 
