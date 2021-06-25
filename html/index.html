@@ -1,0 +1,105 @@
+<html>
+    <head>
+        <title>WebComponents</title>
+        <link rel="stylesheet" href="./common.css" />
+        <style>
+            b-card::part(yes) {
+                color: #1aaf26;
+            }
+        </style>
+    </head>
+
+    <body>
+        <b-card prop="传入Card 的值">
+            <p slot="insertCard">插入 b-card 的 插槽</p>
+            <p>插入 b-card 的 无名插槽</p>
+            <p>插入 b-card 的 无名插槽</p>
+        </b-card>
+        <template id="first-card">
+            <style>
+                :host {
+                    width: 200px;
+                    height: 200px;
+                    background-color: red;
+                }
+                .artical {
+                    color: #1aaf26;
+                }
+            </style>
+            <div class="container">
+                <p class="artical">这是一个webComponents内部</p>
+                <p class="prop"></p>
+                <slot name="insertCard"></slot>
+                <slot></slot>
+            </div>
+            <div part="yes">zcds</div>
+        </template>
+        <p>
+            <button onClick="document.querySelector('b-card').prop = '3';">
+                点击设置prop为3
+            </button>
+        </p>
+    </body>
+    <script>
+        class BCard extends HTMLElement {
+            // 自定义组件 注册要监听的属性
+            static get observedAttributes() {
+                return ['prop'];
+            }
+            constructor() {
+                super();
+                // 隐藏内部代码,隔离样式，使:host生效
+                const shadow = (this._shadow = this.attachShadow({
+                    mode: 'open',
+                }));
+
+                const template = document.getElementById('first-card'),
+                    content = template.content.cloneNode(true);
+
+                // 接收处理传参
+                content.querySelector('.prop').innerText =
+                    this.getAttribute('prop');
+                shadow.append(content);
+                // 添加事件监听
+                shadow.addEventListener('click', ($event) => {
+                    console.log('事件监听');
+                });
+                console.log(shadow);
+                this.addEventListener('mouseover', (e) => {
+                    this.setAttribute('style', 'color:pink; font-style: bold;');
+                });
+                this.addEventListener('mouseout', (e) => {
+                    this.setAttribute(
+                        'style',
+                        'color:black; font-style: bold;'
+                    );
+                });
+            }
+
+            // 生命周期
+            connectedCallback() {
+                console.log('插入DOM中');
+            }
+            disconnectCallback() {
+                console.log('从DOM中移除');
+            }
+            attributeChangedCallback(name, oldValue, newValue) {
+                console.log('修改属性');
+
+                this._prop = newValue;
+            }
+            get prop() {
+                return this._prop;
+            }
+            set prop(v) {
+                this.setAttribute('prop', v);
+            }
+
+            adoptedCallback() {
+                console.log('移动到新文档');
+            }
+        }
+        window.customElements.define('b-card', BCard);
+    </script>
+</html>
+<script></script>

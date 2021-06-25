@@ -2,15 +2,39 @@
 
 ​	zone是一个执行上下文，专门为异步操作设计，通过重写异步操作[setTimeout，setInterval，setImmediate，promise，ajax。。。]等方法用来拦截追踪异步操作。
 
-​	主要操作是重写异步操作，添加zone函数，当触发异步时，记录收集zone，回调异步时在记录的zone的执行上下文中执行异步操作。
+```typescript
+`1.`zone
+`2.`delegate  zone的代理，存储钩子
+`3.`task      异步API执行生成一个task
+```
+
+​	主要操作是**重写异步操作**，**添加zone函数**，当**触发异步**时，记录**收集zone**，回调异步时在记录的**zone的执行上下文中执行异步操作**。
+
+```typescript
+`setTimeout为例`
+{
+   重写异步操作:'__load_patch'
+   收集zone： scheduleMacroTaskWithCurrentZone
+}
+```
+
+**思维导图：**https://www.processon.com/mindmap/60d29300079129776d2c9a65
 
 **zone在Angular中的作用**：重写异步操作，在触发异步操作时通知Angular执行变更检测。
 
+## 起始
 
+`zone所有操作都由一个Zone<root>开始：new Zone(null, null) `，其他的zone都是根的子节点，
 
-​	有一个‘<root>’zone,其他的zone都是根的子节点，
+```typescript
+初始参数：
+parent：null,   // 父
+zoneSpec:null   // zone 的配置
+```
 
-zone：执行上下文
+zone：函数执行上下文
+
+_currentZoneFrame：zone执行上下文栈
 
 zoneDelegate：储存钩子函数，在运行阶段判断是否调用钩子函数，**注意**：用户钩子会拦截程序默认操作
 
@@ -29,7 +53,7 @@ class zone  {
           this._properties = zoneSpec && zoneSpec.properties || {};
           this._zoneDelegate =
               new ZoneDelegate(
-              			this, this._parent && this._parent._zoneDelegate, zoneSpec);
+              	this, this._parent && this._parent._zoneDelegate, zoneSpec);
         }
 	run(fn) 切换zone，让fn在指定的zone中执行，完成后恢复之前的zone
     fork
@@ -62,16 +86,26 @@ _updateTaskCount      hasTask[onhasTask]
 比如 onFork 钩子,当没有onFork钩子时,会创建新的zone并返回,但是如果有 onFork 钩子,后续流程会走 onFork函数,如果在 onFork 钩子里没有返回新的zone,就不会生成zone, 所以需要你在 onFork 函数中生成zone并返回.
 ```
 
+##### _currentZoneFrame
+
+```typescript
+zone执行上下文，在zone.run(),时，切换_currentZoneFrame中的zone。执行完成后，再恢复_currentZoneFrame
+```
+
+
+
 ##### zoneSpec
 
 ```typescript
-【通过传递 zoneSpec 配置来控制 zone 的拦截操作。】
+zoneSpec是 zone 的配置数据，可配置zone的name，properties及 所有的生命周期钩子函数
+【生命周期钩子】：父zone拦截其子zone的某些操作
+
 interface ZoneSpec {
     name: string;                                 // 新生zone的名称
-    properties?: { [key: string]: any };          // 传递共享的数据
+    properties?: { [key: string]: any };          // 当前zone存储的数据对象，可在子zone通过get获取key 获取 value，与注入类似，可被遮挡
   ----------------------------初始化时注册的钩子函数---------------------  
     onFork?: ( ... );         //在 fork 时执行                    
-    onIntercept?: ( ... );    
+    onIntercept?: ( ... );    //拦截
     onInvoke?: ( ... );       //zone.run()执行时
     onHandleError?: ( ... );  //catch到错误时执行
     onScheduleTask?: ( ... ); //检查到异步操作执行时执行
@@ -97,27 +131,31 @@ interface ZoneSpec {
 ##### ZoneTask
 
 ```typescript
-根据任务类型分类[微任务,宏任务,事件]，
-生成 ZoneTask 实例 task, 与生命周期[onScheduleTask,onInvokeTask,onCancelTask,onHasTask]
-相关
-`task中保存了异步应用的调用栈`
+`调用patch后的异步API时，会生成ZoneTask，交给 zone.scheduleTask 处理，
+zone在调用代理 _zoneDelegate.scheduleTask,触发 [onScheduleTask] 生命周期
 
-@params type   :类型
-@params source :识别不同的任务:['fetch','promise.then'....]
-@params callback
-@params options
-@params scheduleFn
-@params cancelFn
+根据任务类型分类[微任务,宏任务,事件]，
+生成 ZoneTask 实例 task, 与生命周期`[onScheduleTask,onInvokeTask,onCancelTask,onHasTask]
+相关
+`task中保存了异步应用的调用栈 【zone】`
+
+
+@params type   : 'macroTask'
+@params source : 'setTimeout'
+@params callback: 回调
+@params options： 配置
+@params scheduleFn：
+@params cancelFn：
 
 function ZoneTask(type, source, callback, options, scheduleFn, cancelFn) {
-    this._zone = null;
+    this._zone = null;           //保存调用栈【zone】
     this.runCount = 0;
-    this._zoneDelegates = null;
+    this._zoneDelegates = null;   //zone代理
     this._state = 'notScheduled';
     this.type = type;
     this.source = source;
     this.data = options;
-    this.scheduleFn = scheduleFn;
+    this.scheduleFn = scheduleFn;   // 
     this.cancelFn = cancelFn;
     this.callback = callback;
     var self = this;
@@ -138,21 +176,17 @@ function ZoneTask(type, source, callback, options, scheduleFn, cancelFn) {
 
 ```typescript
 `当前zone的代理，在new zone时产生对应代理_zoneDelegate，根据传入的配置(代理目标zone，父级代理，代理配置)生成对应的子代理`
-根据 zoneSpec 配置的不同的钩子函数 保存对应的zoneSpec, parentDelegate, CurrZone
-当
+
+根据 zoneSpec 配置的不同的钩子函数保存对应的zoneSpec, parentDelegate, CurrZone
 
 
-当调用 zone 的方法时，内部调用了  ZoneDelegate 的对应方法，
-  fork[zone] -> fork[ZoneDelegate] -> 
-      				_forkZS.onFork(this._forkDlgt!, this.zone, targetZone, zoneSpec) 
-			        new Zone(targetZone, zoneSpec)
-	如果当前 ZoneDelegate 有 _forkZS，就调用对应的周期函数onFork，在周期函数里做拦截，最后生成zone。如果没有就证明此zone的上级都没有配置生命周期onFork函数，就直接生成zone返回。
+
+
 
     
     
 interface _zoneDelegate  {
     public zone: Zone;  //代理的当前zone
-
     private _taskCounts:
         {microTask: number,
          macroTask: number,
@@ -203,6 +237,8 @@ interface _zoneDelegate  {
 
 ##### zone.run(fn)
 
+`切换_currentZoneFrame，执行代理的invoke函数`
+
 ```typescript
 class zone {
     public run<T>(
@@ -219,7 +255,15 @@ class zone {
 通过设置_currentZoneFrame，进入当前zone，然后执行生命周期函数this._zoneDelegate.invoke，没有_invokeZS就直接运行callback。最后回到上级zone。
 ```
 
-#### ZoneAwarePromise
+## patch
+
+```typescript
+zone 代理的API
+```
+
+
+
+### ZoneAwarePromise
 
 **重点**:promise 和 zone之间的联系:
 
@@ -284,131 +328,98 @@ function makeResolver(promise, state) {
 
 ```
 
-#### setTimeout
+### setTimeout
 
-setTimeout的触发过程：
+`window.setTimeout 的patch`
 
-1. patch重写
+#### __load_patch重写
 
-   ```typescript
-   `获取原生setTimeout，用 patchFn 来替代原生setTimeout`
-   
-   patchTimer(global, 'set', 'clear', 'Timeout');
-   patchMethod(global, 'setTimeout', patchFn)
-   delegate = proto[delegateName] = global['setTimeout'];
-   var patchDelegate_1 = patchFn(delegate, delegateName, name);
-   proto[name] = function () {
-       return patchDelegate_1(this, arguments);
-   };
-   `patchFn是重写 setTimeout的关键`
-   ```
+```typescript
+Zone.__load_patch('timers', function (global) {
+    var set = 'set';
+    var clear = 'clear';
+    patchTimer(global, set, clear, 'Timeout');
+    patchTimer(global, set, clear, 'Interval');
+    patchTimer(global, set, clear, 'Immediate');
+});
 
-   patchTimer【重写setTimeout】
+function __load_patch(){
+    patches[name] = fn(global, Zone, _api);
+}
 
-   ```typescript
-   `scheduleMacroTaskWithCurrentZone 操作 与zone 关联`
-   `scheduleTask 属于 patchTimer`
-   `patchMethod 的第三个参数就是 重写后的setTimeout`
-   patchMethod(window, setName, function (delegate) { return function (self, args) {
-               if (typeof args[0] === 'function') {
-                   var options = {
-                       isPeriodic: nameSuffix === 'Interval',
-                       delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 :
-                           undefined,
-                       args: args
-                   };
-                   var task = scheduleMacroTaskWithCurrentZone(setName, args[0], 
-                                                               options, scheduleTask, clearTask);
-                   if (!task) {
-                       return task;
-                   }
-                   // Node.js must additionally support the ref and unref functions.
-                   var handle = task.data.handleId;
-                   if (typeof handle === 'number') {
-                       // for non nodejs env, we save handleId: task
-                       // mapping in local cache for clearTimeout
-                       tasksByHandleId[handle] = task;
-                   }
-                   else if (handle) {
-                       // for nodejs env, we save task
-                       // reference in timerId Object for clearTimeout
-                       handle[taskSymbol] = task;
-                   }
-                   // check whether handle is null, because some polyfill or browser
-                   // may return undefined from setTimeout/setInterval/setImmediate/requestAnimationFrame
-                   if (handle && handle.ref && handle.unref && typeof handle.ref === 'function' &&
-                       typeof handle.unref === 'function') {
-                       task.ref = handle.ref.bind(handle);
-                       task.unref = handle.unref.bind(handle);
-                   }
-                   if (typeof handle === 'number' || handle) {
-                       return handle;
-                   }
-                   return task;
-               }
-               else {
-                   // cause an error by calling it directly.
-                   return delegate.apply(window, args);
-               }
-           };
-   ```
+fn内 执行patchTimer
+```
 
-   patchMethod
+#### patchTimer【重写setTimeout】
 
-   ```typescript
-   function patchMethod(target, name, patchFn) {
-       var proto = target;
-       while (proto && !proto.hasOwnProperty(name)) {
-           proto = ObjectGetPrototypeOf(proto);
-       }
-       if (!proto && target[name]) {
-           // somehow we did not find it, but we can see it. This happens on IE for Window properties.
-           proto = target;
-       }
-       var delegateName = zoneSymbol(name);
-       var delegate = null;
-       if (proto && !(delegate = proto[delegateName])) {
-           delegate = proto[delegateName] = proto[name];
-           // check whether proto[name] is writable
-           // some property is readonly in safari, such as HtmlCanvasElement.prototype.toBlob
-           var desc = proto && ObjectGetOwnPropertyDescriptor(proto, name);
-           if (isPropertyWritable(desc)) {
-               var patchDelegate_1 = patchFn(delegate, delegateName, name);
-               proto[name] = function () {
-                   return patchDelegate_1(this, arguments);
-               };
-               attachOriginToPatched(proto[name], delegate);
-               if (shouldCopySymbolProperties) {
-                   copySymbolProperties(delegate, proto[name]);
-               }
-           }
-       }
-       return delegate;
-   }
-   `patchFn 返回闭包函数`： patchDelegate_1【patchTimer 第三个参数返回的函数】
-   `重写 setTimeout：内部调用 patchDelegate_1`
-   `返回 delegate：原生setTimeout；并将 delegate 传入 patchDelegate_1，在不满足参数条件时，用原生函数报错`
-   ```
+```typescript
+function patchTimer(window,'set','clear','Timeout'){
+    function scheduleTask(task){...}
+    function clearTask(task){...}
+    setNative = patchMethod(window,'setTimeout',function(delegate){...})
+    clearNative = patchMethod(window,'clearTimeout',function(delegate){...})
+}
 
-   scheduleMacroTaskWithCurrentZone【调用 setTimeout阶段】
+`scheduleMacroTaskWithCurrentZone 操作 与zone 关联`
+`scheduleTask 属于 patchTimer`
+`patchMethod 的第三个参数就是 重写后的setTimeout`
 
-   ```typescript
-   @params source   "setTimeout"
-   @params callback "setTimeout的回调函数"
-   @params data     "记录"{
-                       isPeriodic: nameSuffix === 'Interval', 循环异步???
-                       delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 :
-                           undefined,
-                       args: args 'setTimeout的参数'
-                   }
-   @params customSchedule
-   @params customCancel   "取消setTimeout"
-   
-   function scheduleMacroTaskWithCurrentZone(source, callback, data, customSchedule, customCancel) {
-       return Zone.current.scheduleMacroTask(source, callback, data, customSchedule, customCancel);
-   }
-   `使用当前 zone 安排宏任务`
-   ```
+```
+
+##### scheduleTask
+
+```
+
+```
+
+##### clearTask
+
+```
+
+```
+
+
+
+##### patchMethod
+
+```typescript
+获取原生函数，
+执行`patchFn 返回闭包函数`： patchDelegate_1【patchTimer 第三个参数返回的函数】
+`重写 setTimeout =  patchDelegate_1`
+`返回 delegate：原生setTimeout
+```
+
+#### 调用经过patch 的 setTimeout 函数
+
+```typescript
+调用 scheduleMacroTaskWithCurrentZone 生成 task
+```
+
+##### scheduleMacroTaskWithCurrentZone
+
+```typescript
+@params source   "setTimeout"
+@params callback "setTimeout的回调函数"
+@params data     "记录"{
+                    isPeriodic: nameSuffix === 'Interval', 循环异步???
+                    delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 :
+                        undefined,
+                    args: args 'setTimeout的参数'
+                }
+@params customSchedule  //patchTimer 声明的函数
+@params customCancel    //patchTimer 声明的函数
+
+function scheduleMacroTaskWithCurrentZone(
+				source, 
+                callback,
+        		data,
+                customSchedule,
+                customCancel) {
+    return Zone.current.scheduleMacroTask(
+        source, callback, data, customSchedule, customCancel);
+}
+`使用当前 zone 处理宏任务`
+```
 
 2. 触发zone.current.scheduleMacroTask
 
