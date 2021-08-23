@@ -318,7 +318,7 @@ providers和entryComponents 是整个程序中的动态部分`dynamic content`�
 #### 生命周期
 
 - `ngOnChanges` - 在[输入属性 (input)](https://angular.cn/guide/glossary#input)/[输出属性 (output)](https://angular.cn/guide/glossary#output)的绑定值发生变化时调用。
-- `ngOnInit` - 在第一次 `ngOnChanges` 完成后调用。
+- `ngOnInit` - 在第一次 `ngOnChange` 完成后调用。
 - `ngDoCheck` - 开发者自定义变更检测。
 - `ngAfterContentInit` - 在组件内容初始化后调用。
 - `ngAfterContentChecked` - 在组件内容每次检查后调用。

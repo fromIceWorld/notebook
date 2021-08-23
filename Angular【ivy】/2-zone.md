@@ -629,7 +629,8 @@ function scheduleMacroTaskWithCurrentZone(
 
 ```typescript
 `zone 在 Angular 中触发检查机制的原理`：
-在 zone 中 onHasTask，onInvoke，onInvokeTask 阶段触发 checkStable函数【checkStable触发事件发送(EventEmitter)，在 ApplicationRef 实例中监听(EventEmitter)，运行tick函数】
+fork生成NgZone,NgZone中有自己的事件总线(EventEmitter),有生命周期钩子，
+在 NgZone 中 onHasTask，onInvoke，onInvokeTask 阶段触发 checkStable函数【checkStable触发事件发送(EventEmitter)，在 ApplicationRef 实例中监听(EventEmitter)，运行tick函数】
 ```
 
 tick

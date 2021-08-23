@@ -2,6 +2,8 @@
 
  `Web Components`  =  `Custom Elements`  +  `HTML Imports`  +  `HTML Tmplates`  +  `ShadowDOM`
 
+webComponents 样式与模板之间耦合高？？？只能做UI层， 与框架的通用性没法比
+
 ## Custom Elements
 
 ### `API`
@@ -106,6 +108,18 @@ set prop(v){
 ### 子->父
 
 ```typescript
- 
+`创建自定义触发的事件名称`，dispatchEvent触发事件。
+var event = new CustomEvent('自定义事件名称', {
+    detail: {
+        hazcheeseburger: true,
+    },
+});
+this.dispatchEvent(event);
+`parent监听事件`
+dom.addEventListener('事件名称',(e)=>{
+    
+})
 ```
+
+## 跨组件通讯
 

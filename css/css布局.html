@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<head> </head>
+<title>CSS</title>
+
+<style>
+    body {
+        margin: 0;
+    }
+    .container {
+        height: 200px;
+        position: relative;
+        background-color: antiquewhite;
+    }
+    .box {
+        position: absolute;
+        height: 100px;
+        width: 100px;
+        left: 50%;
+        top: 50%;
+        transform: translateX(-50%) translateY(-50%);
+        background-color: aquamarine;
+    }
+    .flex-container {
+        display: flex;
+        height: 120px;
+        justify-content: space-around;
+    }
+    .flex-box {
+        width: 50px;
+        height: 50px;
+        background-color: cadetblue;
+    }
+    .grid-container {
+        display: grid;
+        height: 120px;
+        grid-template-columns: repeat(3, auto);
+        grid-template-rows: repeat(3, auto);
+        grid-template-areas:
+            'a b c'
+            'd e f'
+            'g h i';
+    }
+    .grid-item1 {
+        background-color: chartreuse;
+        grid-area: e;
+    }
+    .grid-item2 {
+        background-color: rgb(118, 138, 228);
+    }
+    .grid-item3 {
+        background-color: rgb(224, 104, 160);
+    }
+    .grid-item4 {
+        background-color: rgb(172, 204, 58);
+    }
+
+    .left {
+        float: left;
+    }
+    .right {
+        overflow: hidden;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <div class="box">
+            <span>🐖</span>
+        </div>
+        <span
+            >士大夫士大夫方法烦烦烦烦烦烦烦烦烦
+            士大夫士大夫方法烦烦烦烦烦烦烦烦烦
+            士大夫士大夫方法烦烦烦烦烦烦烦烦烦
+            士大夫士大夫方法烦烦烦烦烦烦烦烦烦
+            士大夫士大夫方法烦烦烦烦烦烦烦烦烦
+            士大夫士大夫方法烦烦烦烦烦烦烦烦烦</span
+        >
+
+        <span>🐂 </span>
+        <span>🐕</span>
+        <p>这是一头羊：</p>
+        <p>🐏</p>
+        <button>555</button>
+    </div>
+    <h1>布局</h1>
+    <div class="flex-container">
+        <div class="flex-box">1</div>
+        <div class="flex-box">1</div>
+        <div class="flex-box">1</div>
+    </div>
+    <h1>Grid布局</h1>
+    <div class="grid-container">
+        <div class="grid-item1"></div>
+        <div class="grid-item2"></div>
+        <div class="grid-item3"></div>
+        <div class="grid-item4"></div>
+    </div>
+    <h1>两列自适应</h1>
+    <div class="left" style="background-color: lightblue">
+        <p>left</p>
+    </div>
+    <div class="right" style="background-color: lightgreen">
+        <span>🐂 </span>
+        <span>🐕</span>
+        <p>right</p>
+        <div>sdfs</div>
+    </div>
+    <h1>两列布局，左侧固定</h1>
+    <div style="overflow: hidden">
+        <div
+            style="
+                width: 200px;
+                height: 100px;
+                background-color: cornflowerblue;
+                float: left;
+            "
+        >
+            left
+        </div>
+        <div style="margin-left: 200px; background-color: #aee0ae">
+            左侧width固定 右侧 margin-left后，与左侧盒子在水平方向上组合。
+            由于都属于 块盒，在两行，设置
+            left盒子，float脱离文档流，right盒子会上移。 问题：left
+            漂浮，right如果高度不够left的高度，后续的盒子会在left下面。
+            解决：布局生成BFC，自成一块，不影响外界
+        </div>
+    </div>
+    <h1>三列布局，左右两侧固定，中间自适应</h1>
+    <div style="background-color: darkgrey; width: 100px; float: left">
+        left
+    </div>
+    <div
+        style="
+            background-color: goldenrod;
+            width: 100px;
+            float: right;
+            margin-left: -100%;
+        "
+    >
+        right
+    </div>
+    <div style="background-color: darkmagenta; margin: 0 100px">
+        如果center在中间， left设置 float：left；会导致
+        right排列到下一行，没办法上移。因此把center放到第三个。left【float：left】right【float：right】。center会自动补全到中间
+        问题：center放到第三个，会渲染比较慢【html从上到下渲染】，而center应该是页面的主要部分，应该先渲染
+    </div>
+    <h1>三列布局，左右两侧固定，中间自适应【优化center先渲染】</h1>
+    <div style="position: relative">
+        <div style="background-color: goldenrod; margin: 0 100px">
+            center 在第一个位置，先考虑center 设置margin为 left
+            和right，让出位置 然后考虑让left和right方到 center的 左右：
+            设置parent box relative left absolute，位置设置到parent左上角 right
+            absolute 位置设置到 parent 右上角
+        </div>
+        <div
+            style="
+                background-color: hotpink;
+                width: 100px;
+                position: absolute;
+                top: 0;
+            "
+        >
+            left
+        </div>
+        <div
+            style="
+                background-color: lawngreen;
+                width: 100px;
+                position: absolute;
+                right: 0;
+                top: 0;
+            "
+        >
+            right
+        </div>
+    </div>
+    <h1>圣杯布局</h1>
+    <div>header</div>
+    <div>
+        <div style="background-color: lawngreen; float: left; margin: 0 100px">
+            设置 center/left/right 都浮动， left设置
+            margin：-100%，使left上移一整行，到center的左边，会覆盖center
+            right设置
+            margin：-right的宽度，使right上移到上一行的最右【下一步解决
+            覆盖center问题】 ① 设置 parent元素的padding，left，right
+            设置relative,偏移left和right【圣杯布局的设置】 ② 设置center
+            的margin： 0 100px;
+        </div>
+        <div
+            style="
+                width: 100px;
+                background-color: lemonchiffon;
+                float: left;
+                margin-left: -100%;
+            "
+        >
+            left
+        </div>
+        <div
+            style="
+                width: 100px;
+                background-color: lightseagreen;
+                float: left;
+                margin-left: -100px;
+            "
+        >
+            right
+        </div>
+    </div>
+    <div>footer</div>
+    <h1>双飞翼布局</h1>
+    <div>
+        <div>header</div>
+        <div style="float: left">
+            <div style="margin: 0 100px; background-color: orchid">
+                双飞翼与圣杯的不同之处是处理遮盖的方法, 双飞翼在center中
+                加一个content，设置content的margin：0 100px;【 】
+                为left，right留下位置。 为什莫要加content，因为设置center
+                的margin 会影响left的布局，
+            </div>
+        </div>
+        <div
+            style="
+                background-color: teal;
+                width: 100px;
+                float: left;
+                margin-left: -100%;
+            "
+        >
+            left
+        </div>
+        <div
+            style="
+                background-color: tomato;
+                width: 100px;
+                float: left;
+                margin-left: -100px;
+            "
+        >
+            right
+        </div>
+        <div>footer</div>
+    </div>
+</body>

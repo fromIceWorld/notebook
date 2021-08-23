@@ -1,4 +1,165 @@
-## bootstrapModule
+**前导**：在`0-begin`阶段，已经实例化 `PlatformRef`，【bootstrapModule】属于 PlatformRef的能力，引导项目启动。
+
+# bootstrapModule【ivy】
+
+```typescript
+bootstrapModule(moduleType, compilerOptions = []) {
+        const options = optionsReducer({}, compilerOptions);
+        return compileNgModuleFactory(this.injector, options, moduleType)
+            .then(moduleFactory => this.bootstrapModuleFactory(moduleFactory, options));
+    }
+```
+
+## compileNgModuleFactory
+
+```typescript
+`1.`实例化生成模块工厂，注册import的所有模块【触发所有模块的ɵmod属性的get】
+                          new NgModuleFactory$1(moduleType) 
+`2.`返回 模块工厂【moduleFactory】
+```
+
+## bootstrapModuleFactory
+
+```typescript
+【`平台引导模块`】 moduleFactory
+`1.` 创建 NgZone providers,将后续代码运行在zone中
+`2.` 创建模块实例【moduleRef】  new NgModuleRef$1(module, NgZoneInjector)
+`3.` 运行应用初始化依赖【RouterInitializer】路由相关的初始化依赖。
+```
+
+### _moduleDoBootstrap
+
+```typescript
+【`应用引导模块`的bootstrapComponents】
+`1.`moduleRef.injector.get(ApplicationRef)     //获取应用实例
+`2.`ApplicationRef.bootstrap(moduleRef._bootstrapComponents) //应用引导模块的 bootstrap组件
+```
+
+### bootstrap
+
+```typescript
+【`应用引导模块的bootstrapComponents`】
+`1.`根据 bootstrapComponent 生成组件Factory
+`2.`组件工厂生成组件实例：comRef
+```
+
+### _loadComponent
+
+```typescript
+引导 compRef【组件实例】. 
+this.attachView(componentRef.hostView);  //
+this.tick();                             // view 执行 detectChanges 检查
+```
+
+## 总结
+
+1. platform.bootstrapModule                //平台引导模块 生成 模块工厂 ModuleFactory
+2. platform.bootstrapModuleFactory  // 平台引导模块工厂生成 模块实例 moduleRef
+3. platform._moduleDoBootstrap        // 平台 引出 模块的 应用实例   ApplicationRef
+4. ApplicationRef.bootstrap                  // 应用 引导 模块的 bootstrapComponent
+5. resolveComponentFactory                // 解析 组件class，生成 组件工厂 componentFactory
+6. componentFactory.create                 //组件工厂 生成 组件实例   compRef
+7. ApplicationRef._loadComponent     //应用 加载 组件实例
+8. ApplicationRef.tick()                            // 应用 进行检查  
+
+#### 1.ModuleFactory
+
+```typescript
+const moduleFactory = new NgModuleFactory$1(moduleType)
+---------------------------------------------------------------------------
+class NgModuleFactory$1 extends NgModuleFactory{
+    constructor(moduleType){
+        super();
+        this.moduleType = moduleType;
+        const ngModuleDef = getNgModuleDef(moduleType);
+        if (ngModuleDef !== null) {
+            registerNgModuleType(moduleType);  //注册 import
+        }
+    }
+    create(parentInjector) {
+        return new NgModuleRef$1(this.moduleType, parentInjector);
+    }
+}
+```
+
+#### 2.moduleRef
+
+```typescript
+const moduleRef = moduleFactory.create(ngZoneInjector);
+{
+    _parent:ngZoneInjector
+    _bootstrapComponents: 模块的 bootstrapComponent
+    injector:moduleRef自身,
+    componentFactoryResolver:组件解析依赖`👇`,
+    _r3Injector： R3Injector   //依赖
+    instance：
+}
+--------------------------------------------------------------------------------------
+class ComponentFactoryResolver$1 extends ComponentFactoryResolver {
+    constructor(ngModule) {
+        super();
+        this.ngModule = ngModule;
+    }
+    resolveComponentFactory(component) {
+        const componentDef = getComponentDef(component);
+        return new ComponentFactory$1(componentDef, this.ngModule);
+    }
+}
+```
+
+#### 3.ApplicationRef
+
+```typescript
+const appRef = moduleRef.injector.get(ApplicationRef);
+{
+    _componentFactoryResolver：
+    _views：视图view
+    componentTypes：应用下的组件类型
+    components：应用下的组件
+    
+}
+```
+
+#### 4.componentFactory
+
+```typescript
+let componentFactory =
+          this._componentFactoryResolver.resolveComponentFactory(componentOrFactory)
+		 【new ComponentFactory$1(componentDef, ngModule)】
+----------------------------------------------
+class ComponentFactory$1 extends ComponentFactory {
+    constructor(componentDef, ngModule) {
+        super();
+        this.componentDef = componentDef;  //组件的 comp
+        this.ngModule = ngModule;          //所属模块
+        this.componentType = componentDef.type;
+        this.selector = stringifyCSSSelectorList(componentDef.selectors); //css选择器
+        this.ngContentSelectors =
+            componentDef.ngContentSelectors ? componentDef.ngContentSelectors : [];
+        this.isBoundToModule = !!ngModule;
+    }
+}
+```
+
+#### 5.compRef
+
+```typescript
+const compRef = componentFactory.create(Injector.NULL, [], selectorOrNode, ngModule);
+--------------------------------------------------------------------------------------
+create 时，创建 view。
+`1.`创建 rootLView，rootTView，hostRNode   等相关视图
+`2.`renderView(rootTView,rootLView,mull) // 渲染view 及其 child view
+`3.`_loadComponent()                     // 将bootstrap 的view 保存到 ApplicationRef的 _views 中
+`4.`this.tick()                          // ApplicationRef 的 view 执行 脏检查
+```
+
+
+
+
+
+# --------分割线----------------------------------
+
+# bootstrapModule【view-engine】
 
 用到的依赖：
 
@@ -2350,7 +2511,7 @@ class _Tokenizer{
 
 
 
-#### ReflectionCapabilities
+#### ReflectionCapabilities【标记参数装饰器】
 
 ```typescript
 export class ReflectionCapabilities implements PlatformReflectionCapabilities {

@@ -92,8 +92,9 @@ checkscope();
 ##### **this指向**
 
 ```javascript
+
 this的指向是在运行时确定的，按照最基础的理解，谁调用函数，this就指向谁，但是这样的理解是片面的，只是根据this的表现去总结this，最根本上，JavaScript对于this的处理是:
-    判断MemberExpression是不是Reference，如果是Reference，用GetValue获取base值，如果base是对象，     this指向base，如果base是EnvironmentRecord，返回undefined，如果不是Reference返回undefined。
+    判断【MemberExpression】是不是Reference，如果是Reference，用GetValue获取base值，如果base是对象，     this指向base，如果base是EnvironmentRecord，返回undefined，如果不是Reference返回undefined。
     if(MemberExpression === Reference){
     	if(typeOf base === Object){
     		this = base
@@ -257,14 +258,19 @@ el.getAttribute(key);
 
 ##### 模块化
 
-```javascript
-commonJS:
-	0- 每一个文件就是一个模块，拥有自己独立的作用域，变量，以及方法.对其他的模块都不可见
-	1- module代表当前模块,它的exports是对外的接口。require加载的就是module.exports
-	2- 同步加载(缺点:浏览器等待);
-	3- 输出的是值的拷贝，后续模块内的变化就不会影响输出的值。
-	3- 模块可多次加载，但是只会在加载时运行一次，结果被缓存，后续加载会读取缓存结果，如果想再次加载，需清空缓存
-AMD:
+```typescript
+`浏览器module`:
+	浏览器原生支持的模块。
+    缺点：IE支持不友好需>=11； 只能通过服务器测试【本地加载会CORS报错】
+    优点：不用再写语法糖
+`commonJS`:【node】
+    引入：require
+    输出：module.exports
+
+	0- 同步加载(缺点:浏览器等待);
+	1- 输出的是值的拷贝，后续模块内的变化就不会影响输出的值。
+	2- 模块可多次加载，但只会在加载时运行一次，结果被缓存，后续加载会读取缓存结果，如果想再次加载，需清空缓存
+`AMD`:
 	输出：
 		 define(id?, dependencies?,factory)
     引入：
@@ -273,7 +279,7 @@ AMD:
 	0- 主要是requireJS 
 	1- 【依赖前置】，在需要的依赖加载完成后，运行回调函数。[解决依赖顺序问题]
 	2- 异步[解决了js同步加载浏览器等待问题]
-CMD:
+`CMD`:
 	输出：
     	define(id?, deps?, factory)
         /**********************       

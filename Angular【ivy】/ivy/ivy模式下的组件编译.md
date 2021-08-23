@@ -275,6 +275,7 @@ slotOffset:插槽偏移量
 ```typescript
 组件在挂载阶段会生成 componentFactory（包括 def，type，selector，module）
 componentFactory.create 创建 `rootTView/rootLView` 再创建组件view(LView) 【组件view 被rootView包裹的意义？？】
+
 ```
 
 ### `8.`componentFactory.create
@@ -436,8 +437,6 @@ const $def = defineComponent({
         ],
     })
 ```
-
-
 
 #### constantPool
 

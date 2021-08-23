@@ -6,11 +6,12 @@
 
 *类装饰器*：
 
-```
-为class 添加静态属性 【配置get】,在获取对应静态属性时，编译指令/模块/管道/注入
+```typescript
+`ɵcmp`,`ɵinj`
+为class 添加静态属性  【配置get】,在获取对应静态属性时，编译指令/模块/管道/注入
 ```
 
-属性装饰器：
+**属性装饰器：**
 
 ```
 为class.__prop__metadata__ 添加静态属性:{
@@ -20,7 +21,7 @@
 }
 ```
 
-参数装饰器：
+**参数装饰器**：
 
 ```typescript
 `参数装饰器限定依赖查找的方式`
@@ -187,6 +188,7 @@ function makeParamDecorator(name, props, parentClass) {
                 while (parameters.length <= index) {
                     parameters.push(null);
                 }
+                 `parameters 是二维数组，因为可能是多装饰器`
                 (parameters[index] = parameters[index] || []).push(annotationInstance);
                 return cls;
             }
@@ -215,7 +217,10 @@ function makeParamDecorator(name, props, parentClass) {
 
 ```typescript
 `compileNgModule`:JIT模式下运行
-编译模块，为模块class添加 `ɵmod` and `ɵinj`
+编译模块，为模块class添加：
+`ɵmod`：@NgModule的参数
+`ɵinj`
+
 ```
 
 ##### entryComponents
@@ -232,7 +237,14 @@ function makeParamDecorator(name, props, parentClass) {
 
 ```typescript
 接收装饰器参数
-为class 添加 `ɵdir`静态属性的 get函数
+为class 添加 `ɵdir`静态属性的 get函数：
+
+在解析指令的 数据时，会解析 `属性装饰器`添加到class上的静态属性 ==> 生成 propMetadata
+                               生成 queries属性【@ContentChild】
+                               生成 viewQueries属性【@ViewChild】
+                       `参数装饰器`添加到class上的静态属性 ==> 生成 deps 【依赖注入】
+                       `OnChanges生命周期标识`
+                              lifecycle:{usesOnChanges:true}  // 是否使用OnChanges生命周期
 ```
 
 #### @Component
@@ -246,6 +258,8 @@ function makeParamDecorator(name, props, parentClass) {
 ```typescript
 ɵ2$1 获取组件的元数据,添加默认changeDetection 检查模式 
 ɵ3$1 定义 class 的静态属性 `ɵcmp`的get属性，在获取`ɵcmp`时，调用compileComponent编译组件
+
+组件是 @Directive的 子类，会添加   `ɵfac`：class 的constructor
 ```
 
 #### @Pipe
@@ -269,14 +283,19 @@ function makeParamDecorator(name, props, parentClass) {
 `const Injectable = makeDecorator('Injectable', undefined, undefined, undefined, ɵ0$a);`
 
 ```typescript
-ɵ0$a 函数定义class类静态属性 `ɵprov`的get属性，在获取`ɵprov` 进行 编译
+ɵ0$a 函数定义class类静态属性 `ɵprov`的get属性，在获取`ɵprov`时 进行 编译
      函数定义class类静态属性 `ɵfac`的get属性,在获取`ɵprov` 进行 编译
      
-@Injectable()：标识服务是可注入的【如果配置参数providedIn：root，标识此依赖注入到应用
+@Injectable()：标识服务是可注入的【如果配置参数providedIn：root，标识此依赖注入到应用applicationRef
      											    Type：NgModule】
 providers：将服务配置到NgModule的options，标识服务是属于本模块，在本模块只有一个实例【模块级注入】
            将服务配置到Component的options，标识服务是属于本组件及子组件，在本组件及子组件只有一个实例【组件级注入】
-【组件】viewProviders：将服务配置到Component的options，标识服务是属于本组件，只在本组件有一个实例【组件级注入】        
+【组件】viewProviders：将服务配置到Component的options，标识服务是属于本组件，只在本组件有一个实例【组件级注入】 
+
+`@Injectable原理`:当在组件/指令中使用该依赖时，会根据token【class】向上查找，如果符合依赖注入的规格{
+    有`ɵprov` 和 `ɵfac`属性
+    providedIn 满足要求
+}，就将服务实例化，保存到 records中并返回。
 ```
 
 ### 属性装饰器
@@ -354,6 +373,13 @@ providers：将服务配置到NgModule的options，标识服务是属于本模�
 
 ### 参数装饰器
 
+```typescript
+通过装饰器 paramDecorator 给class 添加 静态属性【__parameters__】,和对应的paramsType[]
+通过 Reflector 获取 params。
+```
+
+
+
 #### attachInjectFlag
 
 ```typescript
@@ -373,7 +399,12 @@ function attachInjectFlag(decorator, flag) {
 
 `const Inject = attachInjectFlag(makeParamDecorator('Inject', ɵ0$3),-1)`
 
-```
+```typescript
+`1.`attachInjectFlag    //为装饰器【ParamDecoratorFactory】添加 flag
+`2.`makeParamDecorator  //构造装饰器【ParamDecoratorFactory】
+`ParamDecoratorFactory`：接收装饰器的参数，生成实例，存储到class[__parameters__]对应的索引中
+
+`Angular 获取 构造函数中通过 @Inject装饰的参数`【ReflectionCapabilities函数】
 
 ```
 
