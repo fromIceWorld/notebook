@@ -306,7 +306,7 @@ enterView/leaveView 操作instructionState.lFrame 维护指令状态[LView,TView
 似乎 rootTView/rootLView 属于 组件view的包裹层,组件的生命周期函数和其他属性:  
 		contentHooks/contentCheckHooks,viewCheckHooks/viewHooks,preOrderCheckHooks/preOrderHooks，destroyHooks
         contentQueries 都存放在【rootTView】,
-在refreshView 时，先更新 rootTView中保存的组件的生命周期【init，check，contentHooks/contentCheckHooks】 再更新组件view【组件view无生命周期】，更新完成组件view后，退出组件环境，回到 rootTView 阶段，再调用  【ngAfterViewInit，ngAfterViewChecked】 生命周期。 
+在refreshView 时，先更新 rootTView中保存的组件的生命周期【init，check，contentHooks/contentCheckHooks】 再更新组件view【组件view不保存生命周期】，更新完成组件view后，退出组件环境，回到 rootTView 阶段，再调用  【ngAfterViewInit，ngAfterViewChecked】 生命周期。 
 `？？？`为什莫需要套一层 rootView，代理执行组件的生命周期等函数【因为兼容性？？？？？】
 
 ```

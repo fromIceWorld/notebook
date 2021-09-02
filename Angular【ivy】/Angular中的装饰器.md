@@ -338,6 +338,8 @@ providers：将服务配置到NgModule的options，标识服务是属于本模�
 
 #### @ViewChild
 
+`获取组件模板中的Component 或者HTMLElement`
+
 `const ɵ3 = (selector, data) => (Object.assign({ selector, first: true, isViewQuery: true, descendants: true }, data));`
 
 `const ViewChild = makePropDecorator('ViewChild', ɵ3, Query);`
@@ -367,9 +369,48 @@ providers：将服务配置到NgModule的options，标识服务是属于本模�
 会在 ngAfterViewInit()之前赋值
 ```
 
+#### @ContentChild
+
+`获取组件 投影进来的 插槽的的Component 或者HTMLElement`
+
+```typescript
+<app-body>
+	<div #slot1>插槽</div>
+	<app-slot>插槽组件</app-slot>
+</app-body>
+
+export class bodyComponent{
+	@ContentChild('slot1')  slot1
+    @ContentChild(SlotComponent)  slotComponent
+}
+```
+
 
 
 #### @hostBinding
+
+```typescript
+用于把一个DOM 属性标记为绑定到宿主的属性，
+
+它会对具有 ngModel 指令的 DOM 元素设置 valid 和 invalid 属性：
+
+@Directive({selector: '[ngModel]'})
+class NgModelStatus {
+  constructor(public control: NgModel) {}
+  @HostBinding('class.valid') get valid() { return this.control.valid; }
+  @HostBinding('class.invalid') get invalid() { return this.control.invalid; }
+}
+
+@Component({
+  selector: 'app',
+  template: `<input [(ngModel)]="prop">`,
+})
+class App {
+  prop;
+}
+```
+
+
 
 ### 参数装饰器
 

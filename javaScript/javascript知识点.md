@@ -2,6 +2,33 @@
 
 ------
 
+##### 下载功能
+
+```typescript
+`1.` location.href = '接口'             //  赋值
+      // 只支持 get 请求，去服务器拉取文件 
+`2.` var blob = new Blob([res], {
+          type: "application/vnd.ms-excel;ctf-8",
+        }); 
+	 a = document.createElement('a');
+     href = window.URL.createObjectURL(blob);
+     a.href = href;
+	 a.setAttribute(
+          "download",
+          decodeURI(
+            res.headers.get("content-disposition").split("filename=")[1]
+          )
+        );
+	 document.body.appendChild(downEL);
+     downEL.click();
+     document.body.removeChild(downEL);
+     window.URL.revokeObjectURL(href);
+     
+2 支持，post 请求传参，接收二进制流
+```
+
+
+
 ##### 函数
 
 ```

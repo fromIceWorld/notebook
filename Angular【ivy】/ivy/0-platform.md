@@ -10,7 +10,7 @@
 
 各层级除了有自身的核心功能，还有通用模块【compilerOptions】
 
-`platformBrowserDynamic()`聚合各层级的providers，通过Injector.create(providers)创建平台依赖集合，
+`platformBrowserDynamic()`聚合各层级的providers，通过Injector.create(providers)创建平台依赖集合【scope:platform】，
 
 然后实例化`PlatformRef`，再运行平台初始化【PLATFORM_INITIALIZER】
 
@@ -36,7 +36,7 @@
 NgZone也有自己的Injector 【ngZoneInjector = [provider:NgZone, parent:平台Injector]】
 
 ```typescript
-`依赖链的第二级 ngZoneInjector `
+`依赖链的第二级 ngZoneInjector ` 【scope:null】
 ```
 
 **依赖链层级**：`Injector【platform】` <== `Injector【NgZone】`
@@ -49,8 +49,9 @@ NgZone也有自己的Injector 【ngZoneInjector = [provider:NgZone, parent:平�
    const moduleRef  = {
        _parent：Injector【NgZone】,
        injector:moduleRef,
-       componentFactoryResolver:解析组件的函数,
-       _bootstrapComponents: 根函数
+       componentFactoryResolver:解析组件的函数[`其中ngModule是moduleRef`],
+                                // 是标记位，在解析组件时，传递给组件，让组件记录所属的模块【AppModule】
+       _bootstrapComponents: 根组件class
        _r3Injector:`收集AppModule及其
               import的module【AppRouterModule, BrowserModule, ChildModuleModule】和它们的providers`
               Map = {
@@ -60,12 +61,12 @@ NgZone也有自己的Injector 【ngZoneInjector = [provider:NgZone, parent:平�
                    ..............
    			}
    }
-   `依赖链的第三级AppModuleInjector`
+   `依赖链的第三级AppModuleInjector`【scope:'root'】
    ```
 
    
 
-2. **引导模块实例**：this._moduleDoBootstrap(moduleRef)
+2. **使用根模块引导应用**：this._moduleDoBootstrap(moduleRef)
 
 # 根模块需要运行在应用上
 
@@ -95,6 +96,17 @@ NgZone也有自己的Injector 【ngZoneInjector = [provider:NgZone, parent:平�
 # 应用引导组件渲染
 
 1. **应用解析组件**：this._componentFactoryResolver.resolveComponentFactory(*componentOrFactory*)
+
 2. **组件实例化**：const compRef = componentFactory.create(Injector.NULL, [], selectorOrNode, ngModule);
+
+   ```typescript
+   `1.` 建立rootview 和 模块的依赖链
+   const rootViewInjector = ngModule ? createChainedInjector(injector, ngModule.injector) : injector;
+   `2.` 找到组件挂载的 DOM【app-root】
+   `3.` 
+   ```
+
+   
+
 3. **引导组件渲染**：this._loadComponent(compRef);
 

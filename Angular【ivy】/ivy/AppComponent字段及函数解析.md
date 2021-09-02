@@ -10,6 +10,7 @@
 ## instructionState[指令集状态]
 
 ```typescript
+
 const instructionState = {
 	lFrame：{
 		currentTNode:    // 用于在创建节点时设置父TNode 并跟踪查询结果,【tView.firstChild】
@@ -37,14 +38,7 @@ const instructionState = {
 ### enterView 
 
 ```typescript
-切换lFrame结构，lFrame结构中LView,TView为主要属性，
-
-@params newView 当前view【初始是LRootView】
-
-
-
-instructionState.lFrame的 childlFrame
-
+维护view的上下文
 ```
 
 
@@ -88,15 +82,21 @@ instructionState.lFrame的 childlFrame
 		【[20-...]第一部分是element节点顺序存放（）】
 `LView的固定索引标记：`
 const HOST = 0;    //存储LView 的宿主节点<app-root>
-const TVIEW = 1;   //此视图的静态数据，存储的tview[指令def]
+const TVIEW = 1;   //此视图的静态数据，存储的组件的一些状态 tview[指令def]，状态
+                   // tview.data 存储 tnode 及BlooHash 区域及一些 依赖 providers
+                   
 const FLAGS = 2;   //LView 的状态{CreationMode：4，Attached：128，FirstLViewPass：8}
+                   // 是否 有 contentqueries，viewqueries，.....
+                        
 const PARENT = 3;  // parentLView = lView[PARENT]
 const NEXT = 4;    // 与 CHILD_HEAD ，CHILD_TAIL 相关
 const TRANSPLANTED_VIEWS_TO_REFRESH = 5;
 const T_HOST = 6;   //  存储当前LView 插入的TNode; 第一个组件的tNode 是#host
 const CLEANUP = 7;  //  清除queries,...
-const CONTEXT = 8;  // LView 的上下文【view 对应的class的实例】
-const INJECTOR = 9;   //ElementInjector依赖注入链，上级是AppModule依赖
+const CONTEXT = 8;  // LView 的上下文【普通view 对应的class的实例，rootview对应的是rootcontext】
+const INJECTOR = 9;   //ElementInjector依赖注入链，rootview的依赖链上级是AppModule依赖
+                      //每一个指令view都指向rootView,以便在依赖链中查找不到依赖时，向                                   // ModuleInjector查找。
+                     
 const RENDERER_FACTORY = 10;  // dom渲染工厂函数,有唯一ID，对组件进行处理后生成渲染函数【RENDERER[11]】
                               //
 const RENDERER = 11;          // 组件渲染数据【包含component的 def,contentAttr,hostAttr,data,eventManager】
@@ -113,14 +113,9 @@ const DECLARATION_COMPONENT_VIEW = 16;  // 如果本视图是嵌入式图，存�
                                         // 否则 存储 自身
 const DECLARATION_LCONTAINER = 17;
 const PREORDER_HOOK_FLAGS = 18;        // 生命周期钩子的状态，
-const QUERIES = 19;     //存储queries
-/**
- * Size of LView's header. Necessary to adjust for it when setting slots.
- *
- * IMPORTANT: `HEADER_OFFSET` should only be referred to the in the `ɵɵ*` instructions to translate
- * instruction index into `LView` index. All other indexes should be in the `LView` index space and
- * there should be no need to refer to `HEADER_OFFSET` anywhere else.
- */
+const QUERIES = 19;     // 存储 queries 其中有 匹配到的页面内容
+
+ // 偏移量，常春藤的生长位置。         
 export const HEADER_OFFSET = 20; //存储组件 view
 ```
 
@@ -318,6 +313,7 @@ rootTView 无需要渲染的东西，所以引导 child 渲染
         outputs：输出   //
         exportAs：
         features: 【NgOnChanges， Providers】,
+        ngContentSelectors:['*', 'content'],  <ng-content select> 的选择器
         decls: 22【视图函数的数量【element节点 + 监听事件函数 + pipe函数】】,
         vars: 5【纯函数，绑定插槽数量】,在视图更新时，会获取存储的数据
         consts: 解析出element节点上的所有属性[
@@ -415,10 +411,58 @@ rootTView 无需要渲染的东西，所以引导 child 渲染
 
 ##### ɵɵtemplate
 
-`为 ng-template 创建LContainer 【动态插入视图】`
+`为 ng-template 及 ng-container 创建LContainer 【动态插入视图】`
 
+ng-template 及 ng-container 创建出的 DOM 都是 注释comment
+
+```typescript
+tNode 是通过 templateFirstCreatePass 创建。
+`tNode.tViews`: 不同于 普通tNode的地方，  // 所创建的 view 是 embeddedTView[嵌入式图]
+`tNode.type` : 'Container' 类型的
+
+<ng-template>及<ng-container> 在 lview 位置 创建出的view 是 LContainer 
 ```
 
+###### LContainer 
+
+插入的视图
+
+```typescript
+const lContainer = [
+	hostNative,
+    true,    // 此位置的Boolean 值 ，标识 这个容器是lContainer
+    false,   // 是否有 移植view
+    currentView, // parentView
+    null,       // next
+    0,          // 移植视图的刷新个数
+    tNode,      // t_host
+    native,     //  DOM节点，对应的注释节点
+    null，      // view refs
+    null,
+]
+```
+
+##### ɵɵreference
+
+```typescript
+当页面有嵌入式图如下:`
+		<ng-container *ngTemplateOutlet="tem"></ng-container>
+        <ng-template #tem>嵌入视图</ng-template>
+`
+var _r4 = jit___reference_14(15);
+.....
+jit___property_16('ngTemplateOutlet',_r4);
+
+会运行 ɵɵreference(index),  // index 是 <ng-template> view 在 lview的 索引。
+获取 LContainer  // _r4 = lview[index]
+```
+
+##### ɵɵproperty
+
+```typescript
+`处理 ng-template 和 ng-container`：
+`1.` 将 lContainer处理成 TemplateRef。赋值到 lview中的 bindingIndex 位置
+`2.` 再将 TemplateRef赋值到 <ng-container> 对应的 节点上  ngTemplateOutlet属性上。
 ```
 
 
@@ -462,9 +506,18 @@ rootTView 无需要渲染的东西，所以引导 child 渲染
 `2.` subscribe to directive outputs
 ```
 
+##### ɵɵprojectionDef
 
+```
+处理父组件投影进来的视图
+```
 
+##### ɵɵprojection
 
+```typescript
+`<ng-content> 会渲染成 ɵɵprojection函数`，目的是，处理投影视图，从父级component 上找到DOM：
+处理 ng-content，接收视图
+```
 
 
 
