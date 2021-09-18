@@ -478,7 +478,8 @@ Angular 在父 ElementInjector 中而不是当前 ElementInjector 中开始搜�
 `const Host = attachInjectFlag(makeParamDecorator('Host'), 1 */\* Host \*/*);`
 
 ```
-使你可以在搜索提供者时将当前组件指定为注入器树的最后一站
+@Host 属性装饰器会禁止在宿主组件以上的搜索。宿主组件通常就是请求该依赖的那个组件。
+不过，当该组件投影进某个父组件时，那个父组件就会变成宿主
 ```
 
 

@@ -2,7 +2,17 @@
 
 **相同点**：更新用的函数相同【*ɵɵloadQuery*，*ɵɵqueryRefresh*】
 
-**不同点**：加载用函数不同，一个是*ɵɵcontentQuery*，一个是 *ɵɵviewQuery*
+**不同点**：加载用函数不同，一个是*ɵɵcontentQuery*，一个是 *ɵɵviewQuery*，
+
+​               一个是查询当前view，一个是查询投影进来的<ng-content>
+
+​              **Create时机不同**，contentQueries是在 父view render阶段执行，初始化数据存入了 tview.queries【parent 】中
+
+​                                             viewQuery 在当前 view render阶段执行，数据存入了当前  tview.queries 中
+
+​             **Update时机不同**，当更新当前view时，如果有contentQueries，就证明子view 有contentQueries，执行子指令的
+
+​                                               contentQueries的 update 函数。
 
 **查询时机**：
 
@@ -10,7 +20,7 @@
 
 **相关知识点**：*tNode.localNames*
 
-
+# Create阶段
 
 ## contentQueries
 
@@ -29,19 +39,14 @@ function AppComponent_ContentQueries(rf,ctx,dirIndex) {
 
 ### ɵɵcontentQuery
 
+jit___contentQuery_3
+
 ```typescript
-function ɵɵcontentQuery(directiveIndex, predicate, flags, read) {
-    const tView = getTView();
-    if (tView.firstCreatePass) {
-        const tNode = getCurrentTNode();
-        createTQuery(tView, new TQueryMetadata_(predicate, flags, read), tNode.index);
-        saveContentQueryAndDirectiveIndex(tView, directiveIndex);
-        if ((flags & 2 /* isStatic */) === 2 /* isStatic */) {
-            tView.staticContentQueries = true;
-        }
-    }
-    createLQuery(tView, getLView(), flags);
-}
+`1.` 将@ContentQuery中 查找用的元数据与 tNode.index 存入 'tView.queries' 中     // 父级的tView.queries中
+`2.` 将 contentQuery元数据在tView.queries中的索引与directiveIndex存入 tView.contentQueries中
+     tView.contentQueries 存储 索引及指令存储，当parent view refreshView时，更新子指令的 contentQueries 数据
+`3.` 创建当前query的可观察数据，放入lview[19]; // lview[19]是一个可Observable的 列表
+
 ```
 
 ## viewQuery
@@ -61,17 +66,12 @@ function AppComponent_Query(rf,ctx) {
 
 ### ɵɵviewQuery
 
+jit___viewQuery_6
+
 ```typescript
-function ɵɵviewQuery(predicate, flags, read) {
-    const tView = getTView();
-    if (tView.firstCreatePass) {
-        createTQuery(tView, new TQueryMetadata_(predicate, flags, read), -1);
-        if ((flags & 2 /* isStatic */) === 2 /* isStatic */) {
-            tView.staticViewQueries = true;
-        }
-    }
-    createLQuery(tView, getLView(), flags);
-}
+`1.` 将@ViewQuery中 查找用的元数据与 `-1` 存入 'tView.queries' 中   // 当前的tView.queries中
+     
+`3.` 创建当前query的可观察数据，放入lview[19]; // lview[19]是一个可Observable的列表
 ```
 
 ## ɵɵcontentQuery 和 ɵɵviewQuery
@@ -84,7 +84,7 @@ function ɵɵviewQuery(predicate, flags, read) {
    `createTQuery(tview, meta, nodeIndex)`创建搜索元数据 存储到 tView.queries
    
    但是参数 nodeIndex 不同，contentQueries 存储的 nodeIndex 是tNode.index，
-                     viewQuery 存储的 nodeIndex 是 -1。
+                         viewQuery 存储的 nodeIndex 是 -1。
    
    
    ```
@@ -97,22 +97,13 @@ function ɵɵviewQuery(predicate, flags, read) {
    tView.contentQueries.push(tView.queries.length - 1, directiveIndex);
    ```
 
-3.  都会创建  搜索列表 存储到 *lView*[QUERIES]
+3.  都会创建【可观察数据】 存储到 *lView*[QUERIES]
 
-4. 存储匹配用的元数据
-
-   ```typescript
-   const queryList = new QueryList(
-       (flags & 4 /* emitDistinctChangesOnly */) === 4 /* emitDistinctChangesOnly */);
-   
-   lView[QUERIES].queries.push(new LQuery_(queryList));
-   ```
-
-5. 匹配时机
+4. 匹配时机
 
    ```typescript
-   `匹配时机是指将元数据 与 tNode上的 reference name 匹配，然后存入 tview.matches`，在refresh时更新用。
-    `1.` 在创建 tNode时，如果有 tView.queries 属性，就将 predicate【搜索用的元数据】与 
+   `匹配时机是指将查询用的元数据 与 tNode上的 referenceName 匹配，然后存入 tview.matches`，在refresh时更新用。
+    `1.` 在创建 tNode时，如果有查询属性【tView.queries】，就将 predicate【搜索用的元数据】与 
          tNode.localNames 进行匹配，匹配成功后，
          将 tNode.index 及 matchIdx 存入 TQuery_.matches中 
    
@@ -127,9 +118,9 @@ function ɵɵviewQuery(predicate, flags, read) {
         matches 存储 [tNode.index, -1]
    ```
 
-   
+   # 
 
-6. 创建及更新时机
+5. 创建及更新时机
 
    更新时 都使用 **ɵɵloadQuery** 和 **ɵɵqueryRefresh**
 
@@ -171,6 +162,32 @@ function ɵɵviewQuery(predicate, flags, read) {
    'static：false'：在组件初始化时才查询
    ```
 
+# Update阶段
+
+contentQueries 和 viewQuery 的更新逻辑相同：
+
+**ɵɵloadQuery** => **ɵɵqueryRefresh**
+
+## ɵɵloadQuery
+
+```typescript
+function ɵɵloadQuery() {
+    return loadQueryInternal(instructionState.lFrame.lView, instructionState.lFrame.currentQueryIndex);
+}
+lView[QUERIES].queries[queryIndex].queryList
+
+`从 lview[19].queries中获取对应视图的queryList`
+```
+
+## ɵɵqueryRefresh
+
+```typescript
+`0.` 更新 instructionState.lFrame.currentQueryIndex; 前进一位，指向下一个Query
+`1.` 如果queryList.dirty，根据tview.queries中存储的nodeIndex，更新queryList.result，再触发queryList事件
+```
+
+
+
 # 标志位 reference
 
 在 elementStartFirstCreatePass 阶段中的 resolveDirectives 阶段，根据 *localRefs* 存储到 **tNode.localNames**
@@ -202,15 +219,102 @@ tNode.localNames = ['content', -1]
 # 总结
 
 ```typescript
-`1.` tNode.localNames 存储 [reference名称, 标志位]
-`2.` ɵɵcontentQuery 和 ɵɵviewQuery 存储用于匹配 reference 的 元数据。
-                 // contentQueries 及 viewQuery 函数的 Create 阶段，都只是存储元数据
-`3.` 在 elementStartFirstCreatePass 最后阶段，tview.queries与 localNames匹配，匹配成功后将          tNode.index与 标志 存入TQuery_的 matches中
-`4.` 在 refresh 阶段，根据 currentQueryIndex，在 lView[QUERIES]中 找到lQuery中的 matches，根据 
-     tview及 tQuery.matches中存储的【tNode.index, 标识】，创建实例，存储到 lQuery.matches中。
-       然后重置 lQuery中的 _result, first， last， 最后lQuery再 emit(lQuery)
+`tview.queries`:{
+            queries<`TQuery_`>:[],
+            elementStart(tView, tNode){
+                for (let i = 0; i < this.queries.length; i++) {
+                    this.queries[i].elementStart(tView, tNode);
+                }
+            }
+            elementEnd(tNode) {
+                for (let i = 0; i < this.queries.length; i++) {
+                    this.queries[i].elementEnd(tNode);
+                }
+            }
+            嵌入视图的处理
+            template的处理
+            .....
+        }
+`TQuery_`:{
+        metadata = {
+            predicate: ['*', ''];
+            flags,   // 标志位
+            read,    // 标记位，标记当前查询的类型
+        };
+        matches = null;
+        indexInDeclarationView = -1;
+        crossesNgTemplate = false;         // 嵌入视图
+    
+        _appliesToNextNode = true;
+        _declarationNodeIndex = nodeIndex;
+}
+----------------------------------------------------------------
+`LQueries_`:{
+    queries<`LQuery_`>:[],
+}
+`LQuery_`:{
+    queryList<`QueryList`> = queryList;
+    matches = null;
+}
+`QueryList`：{
+	    _emitDistinctChangesOnly = _emitDistinctChangesOnly;
+        dirty = true;
+        _results = [];
+        _changesDetected = false;
+        _changes = null;
+        length = 0;
+        first = undefined;
+        last = undefined;
+}
+TQuery_: 存储匹配用的元数据,匹配到的元数据及状态符。
+tview.queries：存储每一个contentQuerie 和 viewQuery 产生的数据<TQuery_>
+lview[19]: 存储LQuery_, 可标记存储的LQuery_为dirty状态。   
+LQuery_：存储匹配结果QueryList
+-------------------------------------------------------------------------------------------
+<child-dir #c="child"></child-dir>
+<child-dir #c></child-dir>  
+`1.` 在ɵɵelementStart阶段执行指令的 contentQueries【Create】, 将@ContentChild的元数据['*']与tNode.index
+     合并后存入tview.queries:[
+         {
+             metadata:{
+                 predicate = ['*'];
+                 flags = flags;
+                 read = read; // 标志位，标记匹配的目标ElementRef,ViewContainerRef,TemplateRef，provider，
+                              // directive，或是null。
+                              // 当是ElementRef,ViewContainerRef,TemplateRef 会在matches存储[tNode.index, -1]
+                              // providers或是 directive，存储[tNode.index, token所在的索引]
+                              // null 存储[tNode.index, tNode.localNames中匹配的指令索引/-1]
+             } 
+             matches: null,
+             indexInDeclarationView: -1,
+             crossesNgTemplate: false,
+             _appliesToNextNode: true,
+             _declarationNodeIndex: tNode.index
+         }
+     ]; 并将元数据索引及指令的索引存入View.contentQueries:[0, directiveIndex]
+     为当前tview.queries 中的数据，创建响应式数据queryList 存入 lview[19]中
+`2.` 在renderView 阶段执行 viewQuery【Create】，和 contentQueries相似，少了 View.contentQueries步骤
+`3.` localRefs 存储在node上声明的reference:['*',''，'引用名'，'exportsAs 名称'] 
+     exportsMap存储node上指令和组件的 exportAs:{
+         '**': directiveIdx,
+         ``: -1    // 当组件有exportsAs属性时， 这个 -1 就变成组件的索引值
+     }
+     当解析完指令后，将localRefs 和 exportsMap 合并，存入 tNode.loacalNames中。
+     ['引用名称', 指令的索引,'引用名称', -1,]
+`4.` 在 elementStartFirstCreatePass阶段用 tview.queries中存储的元数据 与 tNode.localNames匹配
+     匹配成功 就将 `tNode.index`和`指令的索引` 存入 TQuery_.matches:[tnode.index, 指令的索引/-2/-1]
+     因此匹配后每一个他view.queries上都存储了reference匹配到的tNode 及匹配的内容的索引
+`5.` 在`Update`时根据view.queries 中存储的 tNode.index，及target的索引。创建结果集：     
+     target的索引：-1 // 代表是想获取当前节点，根据tNode的类型创建不同的实例:createElementRef,createTemplateRef
+                 -2 // createElementRef,createTemplateRef,createContainerRef
+                 其他索引 // 可能是查找的provider，directive，直接在lview中通过索引获取。
+     将结果集push进 `lview[19].queries[queryIndex].matches`【LQuery_】中。
+     再将结果集存入 `queryList`中,并标记dirty = true
+     最后emit(queryList)，通知订阅者。
+     
+     
 
-`未完成：` contentQueries 和 viewQuery 的初始化时间及更新时间 static与非static的 关系，
+`未完成：`static与非static的 关系，  // 静态视图，可在ngContentInit,ngViewInit 前获取
          contentQuerie 查询的范围[tNode.index],
          查询视图 在 <ng-tamplate> 会如何表现    
 ```

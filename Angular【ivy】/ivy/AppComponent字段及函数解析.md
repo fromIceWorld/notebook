@@ -51,13 +51,15 @@ const instructionState = {
 `LView  = 常规绑定 + 纯函数的绑定 `
 
 `常规绑定`: [0-19]
+`decls`:node,pipeInstance, local reference
+`vars`: template中绑定的属性个数
 `纯函数的绑定`：
 |-------decls------|---------vars---------|                            |----- hostVars (dir1) ------|
  ------------------------------------------------------------------------------------------
 | nodes/refs/pipes | bindings | fn slots  | injector |providers | dir1 |  host bindings | host slots |
 ------------------------------------------------------------------------------------------
-                   ^                      ^
-     TView.bindingStartIndex      TView.expandoStartIndex
+                   ^                      ^                             ^
+     TView.bindingStartIndex      TView.expandoStartIndex               指令的hostBinding属性
 `vars`标记的是绑定的纯函数的返回值，例如 {{参数}}，[**]="参数。那var的长度就是2，在LView的vars段记录 参数的值。
 
 
@@ -65,15 +67,15 @@ const instructionState = {
     [bindingStartIndex = HEADER_OFFSET + decls], //存储dom节点，指令，事件,#ref【dom的引用也会添加一份】
     [常量数据 bindingStartIndex + vars], 
               // 纯函数会保存原始数据和转换后数据，存储到对应位置，节点保存bindingStartIndex + 偏移量，去印证数据是否改变
-    [Bloom过滤器]          //指令injector和所有父级injector 合并
-	providersFactory      //存储providers的工厂函数
+    [Bloom过滤器]          //tNode上指令injector和所有父级injector 合并
 	parentLoc             // 父级injector 的位置
-    指令的实例 【__ngContext__属性存储LView】//tView会存储 指令实例在LView的【索引和hook】，在refresh时调用
-    [Bloom过滤器]          //第二个指令injector和所有父级injector 合并
 	providersFactory      //存储providers的工厂函数
+    指令的实例 【__ngContext__属性存储LView】//tView会存储 指令实例在LView的【索引和hook】，在refresh时调用
+    [Bloom过滤器]          //第二个tNode指令injector和所有父级injector 合并
 	parentLoc             // 第二个指令父级injector 的位置
+	providersFactory      //存储providers的工厂函数
     指令的实例 【__ngContext__属性存储指令所在LView】//tView会存储 指令实例在LView的【索引和hook】，在refresh时调用
-    `...重复的指令相关数据☝`
+    `...重复的tNode上BloomHash及provider，directive相关数据☝`
 】
 `LView 来源于tView.blueprint，在创建时，clone【tView.blueprint】，再添加进去对应数据`
 
@@ -87,16 +89,19 @@ const TVIEW = 1;   //此视图的静态数据，存储的组件的一些状态 t
                    
 const FLAGS = 2;   //LView 的状态{CreationMode：4，Attached：128，FirstLViewPass：8}
                    // 是否 有 contentqueries，viewqueries，.....
+                   // 还会存储 lview 中 已经执行的ngOninit钩子的个数。通过2048【二进制第12位】记录
                         
 const PARENT = 3;  // parentLView = lView[PARENT]
-const NEXT = 4;    // 与 CHILD_HEAD ，CHILD_TAIL 相关
-const TRANSPLANTED_VIEWS_TO_REFRESH = 5;
-const T_HOST = 6;   //  存储当前LView 插入的TNode; 第一个组件的tNode 是#host
+`记录当前view的 相邻的下一个view`          
+const NEXT = 4;    // 相邻的下一个节点
+const TRANSPLANTED_VIEWS_TO_REFRESH = 5;  // 需更新的移植视图的数量
+const T_HOST = 6;   //  当前LView对应的的TNode; 第一个组件的tNode 是#host
 const CLEANUP = 7;  //  清除queries,...
 const CONTEXT = 8;  // LView 的上下文【普通view 对应的class的实例，rootview对应的是rootcontext】
 const INJECTOR = 9;   //ElementInjector依赖注入链，rootview的依赖链上级是AppModule依赖
                       //每一个指令view都指向rootView,以便在依赖链中查找不到依赖时，向                                   // ModuleInjector查找。
-                     
+ 
+`----继承的属性10-12 渲染用的工程函数及 DOM安全卫士-----------`          
 const RENDERER_FACTORY = 10;  // dom渲染工厂函数,有唯一ID，对组件进行处理后生成渲染函数【RENDERER[11]】
                               //
 const RENDERER = 11;          // 组件渲染数据【包含component的 def,contentAttr,hostAttr,data,eventManager】
@@ -104,15 +109,19 @@ const RENDERER = 11;          // 组件渲染数据【包含component的 def,con
 const SANITIZER = 12;         // DOM安全卫士，Angular 默认将所有输入视为不信任值，，当我们通过 property，attribute，  
                               // style，class绑定 或插值方式，将一个值从模板中插入 DOM 时，SANITIZER 会自动帮
                               // 我们清除和转义不受信任的值
-                                 
-const CHILD_HEAD = 13;    // 当前视图树的开始视图，
-const CHILD_TAIL = 14;   //当前视图树的结尾视图，【遍历嵌套视图以删除监听器，调用ondestroy回调】
-// FIXME(misko): Investigate if the three declarations aren't all same thing.
-const DECLARATION_VIEW = 15;    //初始是 parentView
-const DECLARATION_COMPONENT_VIEW = 16;  // 如果本视图是嵌入式图，存储parentLView[DECLARATION_COMPONENT_VIEW] 
-                                        // 否则 存储 自身
-const DECLARATION_LCONTAINER = 17;
-const PREORDER_HOOK_FLAGS = 18;        // 生命周期钩子的状态，
+`13-14 标记了当前view的 子view的 第一个和最后一个 view `                                 
+const CHILD_HEAD = 13;    // 当前视图的 第一个子view，也就是head view
+const CHILD_TAIL = 14;   //当前视图的最后一个个子view，【遍历嵌套视图以删除监听器，调用ondestroy回调】
+          
+          
+`15-16，标记了 当前lview 的位置信息，声明当前view的view，当前view 所属的组件，`          
+const DECLARATION_VIEW = 15;    //声明当前lview 的 lview，也就是parent 
+const DECLARATION_COMPONENT_VIEW = 16;  // 声明lview的 view，当前视图如果是嵌入视图，就会存储parent[16]
+                                        // 非嵌入视图，和 DECLARATION_VIEW一样
+const DECLARATION_LCONTAINER = 17;      // 
+          
+const PREORDER_HOOK_FLAGS = 18;        // 存储生命周期钩子的状态，及 已经执行的ngOninit钩子的个数
+                                       // 在更新开始时，置为0
 const QUERIES = 19;     // 存储 queries 其中有 匹配到的页面内容
 
  // 偏移量，常春藤的生长位置。         
@@ -136,7 +145,8 @@ TView.data 存储节点的tNode。
 
 type：类型 {根：0,组件：1,嵌入：2}
 blueprint：根据LView 的分段原则【HEADER_OFFSET,decls,vars】,分段填充数据
-bindingStartIndex：  // 记录组件绑定
+bindingStartIndex：  // 记录view中绑定的起始索引;        插值语法，函数插槽
+expandoStartIndex:   // 记录view中指令和注入的起始索引;   providers，directives
 firstChild：第一个TNode
 consts: 组件的属性列表【存储node属性 和 queries 名称，存储的索引在ɵɵelementStart时查询queries 时使用】
 data:[  //TView.data 与 LView 映射
@@ -152,8 +162,28 @@ contentQueries：存储【queries中的索引 和 指令的索引】
 
 directiveRegistry：模板注册的指令
 pipeRegistry：模板注册的管道
-preOrderHooks： 如果tNode上有指令，存储 所有tNode 上的指令的 生命周期【ngOnChanges，ngOnInit，ngDoCheck】
-preOrderCheckHooks： 如果tNode上有指令，存储 所有tNode 上的指令的 生命周期【ngOnChanges，ngDoCheck】
+`---------------注册生命周期------------------------------------- `           
+preOrderHooks： 如果tNode上有指令，在解析指令阶段，存储tNode.index;
+preOrderCheckHooks： 如果tNode上有指令，在解析指令阶段，存储tNode.index;
+            
+在实例化指令时，将指令的生命周期注册到tView.preOrderHooks 和 tView.preOrderCheckHooks 中
+[指令在lview的索引，指令的生命周期钩子函数]
+`preOrderHooks`:属于前置生命钩子，包含 ngOnChanges，ngOnInit，ngDoCheck
+`preOrderCheckHooks`:属于check类钩子，包含ngOnChanges，ngDoCheck
+因此存tView中存储的钩子数据的形态：
+`preOrderHooks:`[
+    tNode.index,                     // 标记有生命周期的tNode
+    directiveIndex,ngOnChanges,      // 保存要执行生命周期的指令及要执行的函数
+    -directiveIndex,ngOnInit,        // 
+    directiveIndex,ngDoCheck,
+    ....
+]
+`preOrderCheckHooks:`[
+    tNode.index,
+    directiveIndex,ngOnChanges,
+    directiveIndex,ngDoCheck,
+    ....
+]
 ```
 
 ### LRootView
@@ -218,63 +248,9 @@ TNode
 `11.`更新移植视图的数量【ng-template 到 ng-container】
 ```
 
-### compRef
 
-`组件实例`
 
-```
-@params componentType, 组件class
-@params instance,      组件class 实例
-@params location,      组件的host <app-root>【LView[ROOT]】
-@params _rootLView,    创建组件LView前的 rootView
-@params _tNode         <#host>
 
-在 ApplicationRef._loadComponent阶段,检查更新【内部进行tick检查】
-```
-
-### ɵcmp
-
-```
-{
-	feature：【解析指令的providers，并将其发布到DI系统】
-}
-```
-
-# ComponentFactory$1.create
-
-`Application 引导 module中的 bootstrapComponents 中的 组件渲染 到 <app-root>`
-
-```typescript
-`0.` 创建rootLView，rootLView， // 作为全局的状态
-
-`1.` 创建bootstrapComponentView
-```
-
-## createRootComponentView
-
-`创建bootstrapComponent 对应的 View `
-
-```typescript
-`1.` 创建虚拟tNode<#host>
-`2.` 视图封装【】
-`3.` 创建 rootComponent 的 TView，LView
-------------------首次创建--------------
-`4.` 为tNode 创建 nodeInjector
-     tView.data, LView, tView.blueprint【创建Bloom过滤器】
-     tNode.injectorIndex  就是Bloom过滤器的起始位置
-     Bloom过滤器
-    
-```
-
-## createRootComponent
-
-`实例化 rootComponent，包括依赖的查找,收集生命周期函数`
-
-```typescript
-`1.` 依赖查找，实例化 class
-`2.` 生命周期函数及索引的存储
-`3.` 创建 contentQueries【内容查询】
-```
 
 ## renderView(rootTView, rootLView, null)
 
@@ -360,88 +336,6 @@ rootTView 无需要渲染的东西，所以引导 child 渲染
 
 更新：
 
-##### ɵɵelementStart
-
-```typescript
-@param DOM的index
-@param DOM 节点的名称
-@param 节点属性在 consts 中的index
-@param 标签在 consts 中的index【#索引名】 // contentChild，viewChild
-
-`1.` 创建 nativeNode， 存储到LView的【HEADER_OFFSET + index】中
-`2.` get/create tNode    // 第一次创建就直接创建后存储到 TView.data【HEADER_OFFSET + index】, 
-                         // 非第一次，就直接根据索引【HEADER_OFFSET + index】寻找。
-`3.` resolveDirective，// 解析当前 node 中的指令。 【Bloom过滤器存储】
-                       // 初始化 node.directiveStart 和 node.directiveEnd
-                       // 给 tNode 和 view 添加指令属性
-`4.` 设置当前tNode，更改上下文中的 tNode【setCurrentTNode】
-`5.` 为 native 添加 attrs，style，class
-`6.` 实例化在当前节点上的所有指令。
-```
-
-###### resolveDirective
-
-```typescript
-在生成tNode 时，需要 解析tNode上的属性attrs，是否有 指令
-`1.` 根据attrs 和 directiveRegistry 对比，获取tNode上的指令，添加到Bloom过滤器中
-`2.` 初始化 tNode.directiveStart 和 node.directiveEnd
-
--------------循环处理指令--------------------
-`3.` 将指令的def 添加到 tView.data[directiveIndex]
-            def.factory包装后的 添加到 tView.blueprint[directiveIndex] 和 lView[directiveIndex]
-`4.` tView.preOrderCheckHooks                      // ngOnChanges,ngDoCheck
-          .preOrderHooks                           // ngOnChanges,ngOnInit,ngDoCheck
-     中存储 tNode.index
-`5.` 解析指令上的inputs，outputs与指令的索引组队 赋值到 tNode上
-	 {                                  {
-         ngStyle:'ngStyle',     ======>          ngStyle:[index,'ngStyle']
-     }                                  }
-`6.` 处理 #queryName 
-```
-
-##### ɵɵelementEnd
-
-```typescript
-`1.` let currentTNode = getCurrentTNode();
-`2.` 根据 tNode 的 [directiveStart,directiveEnd],将directive的
-     {ngAfterContentInit, ngAfterContentChecked, ngAfterViewInit, ngAfterViewChecked, ngOnDestroy}
-	 生命周期函数 和 对应索引[directiveStart]分组后,放入tView对应的
-     {contentHooks，contentCheckHooks，viewHooks，viewCheckHooks，destroyHooks}
-```
-
-##### ɵɵtemplate
-
-`为 ng-template 及 ng-container 创建LContainer 【动态插入视图】`
-
-ng-template 及 ng-container 创建出的 DOM 都是 注释comment
-
-```typescript
-tNode 是通过 templateFirstCreatePass 创建。
-`tNode.tViews`: 不同于 普通tNode的地方，  // 所创建的 view 是 embeddedTView[嵌入式图]
-`tNode.type` : 'Container' 类型的
-
-<ng-template>及<ng-container> 在 lview 位置 创建出的view 是 LContainer 
-```
-
-###### LContainer 
-
-插入的视图
-
-```typescript
-const lContainer = [
-	hostNative,
-    true,    // 此位置的Boolean 值 ，标识 这个容器是lContainer
-    false,   // 是否有 移植view
-    currentView, // parentView
-    null,       // next
-    0,          // 移植视图的刷新个数
-    tNode,      // t_host
-    native,     //  DOM节点，对应的注释节点
-    null，      // view refs
-    null,
-]
-```
-
 ##### ɵɵreference
 
 ```typescript
@@ -518,16 +412,6 @@ jit___property_16('ngTemplateOutlet',_r4);
 `<ng-content> 会渲染成 ɵɵprojection函数`，目的是，处理投影视图，从父级component 上找到DOM：
 处理 ng-content，接收视图
 ```
-
-
-
-## enterView
-
-```
-切换 instructionState.lFrame,储存 lView，tView,tNode
-```
-
-
 
 ## renderView
 

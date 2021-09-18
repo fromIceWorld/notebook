@@ -8,13 +8,13 @@
 
 **browser**：平台功能【initDomAdapter,document】
 
-各层级除了有自身的核心功能，还有通用模块【compilerOptions】
+各层级除了有自身的核心功能，还有通用模块【compilerOptions】编译配置
 
 `platformBrowserDynamic()`聚合各层级的providers，通过Injector.create(providers)创建平台依赖集合【scope:platform】，
 
 然后实例化`PlatformRef`，再运行平台初始化【PLATFORM_INITIALIZER】
 
-【由于平台是browser，因此运行initDomAdapter】
+【由于平台是browser，因此运行browser中的provider：initDomAdapter】
 
 # 引导根模块启动
 
