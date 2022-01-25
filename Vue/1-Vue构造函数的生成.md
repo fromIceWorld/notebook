@@ -8,9 +8,16 @@
 
 ------
 
-我们使用的Vue是一个经过层层加强的构造函数，
+```typescript
+`vue`：Object.defineProperty + 生命周期 + props + event
 
-①在src/core/instance/index.js中的增强：
+`Object.defineProperty`：响应核心
+`生命周期`：组件的声明
+`props`：父->子 传值
+`event`：子-> 父
+```
+
+### ①在src/core/instance/index.js中的增强：
 
 ------
 
@@ -67,7 +74,7 @@ renderMixin(Vue)
     // Vue.prototype._p = prependModifier
 ```
 
-②src/core/index.js
+### ②src/core/index.js
 
 ```
 Vue.config
@@ -103,7 +110,7 @@ Vue.util = {
   Vue.version = 2.6.10
 ```
 
- ③ src/platforms/web/runtime/index.js
+###  ③ src/platforms/web/runtime/index.js
 
 ```
 加入web平台属性
@@ -137,7 +144,7 @@ Vue.compile = compileToFunctions   加入属性
 
 ------
 
-**经过各种函数的添加。最终获得的Vue构造函数:**
+### **经过各种函数的添加。最终获得的Vue构造函数:**
 
 ```javascript
 function Vue (options) {

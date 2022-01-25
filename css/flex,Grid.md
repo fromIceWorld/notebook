@@ -142,3 +142,29 @@ Grid：网格布局
 `place-self` ：<align-self> <justify-self>;
 ```
 
+#### Grid应用
+
+Angular echarts 图 排版
+
+```typescript
+// 总体排版
+.container{
+    display:grid;
+    grid-template-areas:                //将grid区域用名字划分
+    	'a b c c'
+        'd d d d'                 
+        'g h i i'
+        'j k l l';
+    grid-template-rows:200px 200px 200px 200px   //设置行的高度
+    grid-template-columns: 25% 25% 25% 25%       // 设置横向划分的比例
+}
+// 设置局部区域的位置
+.item1{
+    grid-area: d;        // 设置当前item 在 d 区域，由于d区域占据一行，因此 item1 也占据一行
+                         // 其他的块，按照原逻辑填充
+}    
+
+container样式设置：服务端返回对象格式的style，前端使用 [ngStyle]接收对象    
+特定item：返回数组？    
+```
+

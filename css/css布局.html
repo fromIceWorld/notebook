@@ -118,6 +118,7 @@
             left
         </div>
         <div style="margin-left: 200px; background-color: #aee0ae">
+            <div>123</div>
             左侧width固定 右侧 margin-left后，与左侧盒子在水平方向上组合。
             由于都属于 块盒，在两行，设置
             left盒子，float脱离文档流，right盒子会上移。 问题：left
@@ -129,14 +130,7 @@
     <div style="background-color: darkgrey; width: 100px; float: left">
         left
     </div>
-    <div
-        style="
-            background-color: goldenrod;
-            width: 100px;
-            float: right;
-            margin-left: -100%;
-        "
-    >
+    <div style="background-color: goldenrod; width: 100px; float: right">
         right
     </div>
     <div style="background-color: darkmagenta; margin: 0 100px">
@@ -241,4 +235,6 @@
         </div>
         <div>footer</div>
     </div>
+    <span> 前文字 </span>
+    <span>后面文字</span>
 </body>

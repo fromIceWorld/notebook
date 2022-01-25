@@ -14,11 +14,11 @@
 
 ​                                               contentQueries的 update 函数。
 
-**查询时机**：
-
 **存储位置**：tview.queries, tview.contentQueries
 
 **相关知识点**：*tNode.localNames*
+
+**难点**：查询target 可能在<ng-template> 中，
 
 # Create阶段
 
@@ -42,11 +42,12 @@ function AppComponent_ContentQueries(rf,ctx,dirIndex) {
 jit___contentQuery_3
 
 ```typescript
-`1.` 将@ContentQuery中 查找用的元数据与 tNode.index 存入 'tView.queries' 中     // 父级的tView.queries中
+`1.` 将@ContentQuery中 查找用的元数据-与 tNode.index 存入 'tView.queries' 中     // 父级的tView.queries中
 `2.` 将 contentQuery元数据在tView.queries中的索引与directiveIndex存入 tView.contentQueries中
-     tView.contentQueries 存储 索引及指令存储，当parent view refreshView时，更新子指令的 contentQueries 数据
+     tView.contentQueries 存储 索引及指令索引，当parent view refreshView时，更新子指令的 contentQueries 数据
 `3.` 创建当前query的可观察数据，放入lview[19]; // lview[19]是一个可Observable的 列表
 
+`tView.queries 与 lview 是映射关系`
 ```
 
 ## viewQuery
@@ -70,8 +71,10 @@ jit___viewQuery_6
 
 ```typescript
 `1.` 将@ViewQuery中 查找用的元数据与 `-1` 存入 'tView.queries' 中   // 当前的tView.queries中
-     
+      // -1 是标记当前query 是 viewQuery，不需要tNode进行限制
 `3.` 创建当前query的可观察数据，放入lview[19]; // lview[19]是一个可Observable的列表
+
+`tview.queries 与 lview 也是映射关系`
 ```
 
 ## ɵɵcontentQuery 和 ɵɵviewQuery
@@ -85,19 +88,27 @@ jit___viewQuery_6
    
    但是参数 nodeIndex 不同，contentQueries 存储的 nodeIndex 是tNode.index，
                          viewQuery 存储的 nodeIndex 是 -1。
-   
-   
+                         
+   `nodeIndex 只是为了标记query的查询范围。`
    ```
 
-2. contentQueries 会保存 TQuery在 tView.queries 上的索引 及 指令 索引
+2. contentQueries 会保存 TQuery在 tView.queries 上的索引 及 指令索引
 
    ```typescript
    `saveContentQueryAndDirectiveIndex(tView, directiveIndex)`
    
    tView.contentQueries.push(tView.queries.length - 1, directiveIndex);
+   
+   `因为只有保存指令的索引，才能在refresh 时，将更新的值赋值给 指令中的属性上`
    ```
 
-3.  都会创建【可观察数据】 存储到 *lView*[QUERIES]
+3. 都会创建【可观察数据】 存储到 *lView*[QUERIES]
+
+   ```typescript
+   lView[QUERIES] 中存储对应查找的结果， 当更新时，会emit事件
+   ```
+
+   
 
 4. 匹配时机
 
@@ -105,7 +116,7 @@ jit___viewQuery_6
    `匹配时机是指将查询用的元数据 与 tNode上的 referenceName 匹配，然后存入 tview.matches`，在refresh时更新用。
     `1.` 在创建 tNode时，如果有查询属性【tView.queries】，就将 predicate【搜索用的元数据】与 
          tNode.localNames 进行匹配，匹配成功后，
-         将 tNode.index 及 matchIdx 存入 TQuery_.matches中 
+         将 tNode.index 及 matchIdx 存入 TQuery_.matches中 // matchIdx 是👇
    
    
    reference 可能匹配DOM，指令，provider，ElementRef，ViewContainerRef，TemplateRef，与read有关
@@ -118,19 +129,17 @@ jit___viewQuery_6
         matches 存储 [tNode.index, -1]
    ```
 
-   # 
-
 5. 创建及更新时机
 
    更新时 都使用 **ɵɵloadQuery** 和 **ɵɵqueryRefresh**
 
    ```typescript
    `viewQuery函数运行 【Create】`  // executeViewQueryFn()
-   在 执行 executeTemplate 前，也就是 运行 模板指令集前
+   在 执行 executeTemplate 前，【也就是运行模板指令集前】
    
    `1.` 初始化 instructionState.lFrame.currentQueryIndex = 0
           // currentQueryIndex 代表当前 查询的索引，初始为 0 
-   `2.` 执行 tView.viewQuery(1, component)
+   `2.` 执行 tView.viewQuery(1 /* Create */, component)
         内部运行 ：ɵɵviewQuery 函数👆：
           `1.` 创建查询的元数据 selector, -1 存入 tview.queries
           `3.` 创建 queryList 存储在 lView[QUERIES]
@@ -156,7 +165,7 @@ jit___viewQuery_6
    
    ------------------------------------------------------------------------------------
    `contentQueries函数运行 【Update】`
-   'static：true'： 在组件初始化前就 查询
+   'static：true'： 在组件初始化`前`就可以查询到查询
       `1.`
       
    'static：false'：在组件初始化时才查询
@@ -188,14 +197,14 @@ lView[QUERIES].queries[queryIndex].queryList
 
 
 
-# 标志位 reference
+# localNames
 
 在 elementStartFirstCreatePass 阶段中的 resolveDirectives 阶段，根据 *localRefs* 存储到 **tNode.localNames**
 
 存储 上的reference 和 标志。
 
 ```typescript
-localRefs = ['content','']
+localRefs = ['content','']  // [key, value], key 是localName，value为空指向当前DOM，value有值，与exportAs 对比
 
 cacheMatchingLocalNames(tNode, localRefs, exportsMap){
 if (localRefs) {
@@ -215,6 +224,113 @@ if (localRefs) {
 普通的reference 存储的index 是 -1， 
 tNode.localNames = ['content', -1]
 ```
+
+# 当在ng-template 中查询
+
+embeddedTView = tNode.tViews 是嵌入视图
+
+embeddedTView.queries
+
+1. 嵌入视图的 queries 查询,是从父级 clone 而来。
+
+   ```typescript
+   `embeddedTView.queries = tview.queries.embeddedTView(tNode)`
+   embeddedTView(tNode) {
+           let queriesForTemplateRef = null;
+           for (let i = 0; i < this.length; i++) {
+               const childQueryIndex = queriesForTemplateRef !== null ? queriesForTemplateRef.length : 0;
+               const tqueryClone = this.getByIndex(i).embeddedTView(tNode, childQueryIndex);
+               if (tqueryClone) {
+                   tqueryClone.indexInDeclarationView = i;
+                   if (queriesForTemplateRef !== null) {
+                       queriesForTemplateRef.push(tqueryClone);
+                   }
+                   else {
+                       queriesForTemplateRef = [tqueryClone];
+                   }
+               }
+           }
+           return queriesForTemplateRef !== null ? new TQueries_(queriesForTemplateRef) : null;
+       }
+   `----------------------------------------------------------------------------------------
+   `childQueryIndex: 是clone得到的query  在 embeddedTView.queries 的索引。
+   
+   `1.` tqueryClone 取决于 TQuery_.embeddedTView 是否可被clone
+   
+   ```
+
+2. clone  query
+
+   ```typescript
+   `TQuery_.embeddedTView(tNode, childQueryIndex)`
+   embeddedTView(tNode, childQueryIndex) {
+           if (this.isApplyingToNode(tNode)) {
+               this.crossesNgTemplate = true;
+               // A marker indicating a `<ng-template>` element (a placeholder for query results from
+               // embedded views created based on this `<ng-template>`).
+               this.addMatch(-tNode.index, childQueryIndex);
+               return new TQuery_(this.metadata);
+           }
+           return null;
+       }
+   `1.` isApplyingToNode 判断当前节点是否在查询的范围，如果还在查询范围，就记录下当前query被ng-template clone了一份
+        并且当前 query 在 crossesNgTemplate 内有匹配项
+   ```
+
+3. 标记 tqueryClone 在 原位置的索引
+
+   ```typescript
+   tqueryClone.indexInDeclarationView = i;
+   ```
+
+   
+
+## isApplyingToNode
+
+
+
+```typescript
+`_appliesToNextNode`：标记当前query是否可匹配当前tNode 上的 localNames。
+`_declarationNodeIndex`： 当前query 所在的 tNode.index
+_appliesToNextNode = true，证明当前 节点还未被关闭，可与 tNode.localNames 匹配
+_declarationNodeIndex 是 query 所在tNode的索引，是 查询的最上级
+
+`例如`：
+    1. <needs-target><i #target></i></needs-target>
+        parent 是查询的节点。
+    2. <needs-target><ng-template [ngIf]="true"><i #target></i></ng-template></needs-target>
+        parent 是null
+    3. <needs-target><ng-container><i #target></i></ng-container></needs-target>
+         需要 通过  <ng-container> 去确定 parent 节点
+    
+    
+
+isApplyingToNode(tNode) {
+        if (this._appliesToNextNode &&
+            (this.metadata.flags & 1 /* descendants */) !== 1 /* descendants */) {
+            const declarationNodeIdx = this._declarationNodeIndex;
+            let parent = tNode.parent;
+            // Determine if a given TNode is a "direct" child of a node on which a content query was
+            // declared (only direct children of query's host node can match with the descendants: false
+            // option). There are 3 main use-case / conditions to consider here:
+            // - <needs-target><i #target></i></needs-target>: here <i #target> parent node is a query
+            // host node;
+            // - <needs-target><ng-template [ngIf]="true"><i #target></i></ng-template></needs-target>:
+            // here <i #target> parent node is null;
+            // - <needs-target><ng-container><i #target></i></ng-container></needs-target>: here we need
+            // to go past `<ng-container>` to determine <i #target> parent node (but we shouldn't traverse
+            // up past the query's host node!).
+            while (parent !== null && (parent.type & 8 /* ElementContainer */) &&
+                parent.index !== declarationNodeIdx) {
+                parent = parent.parent;
+            }
+            return declarationNodeIdx === (parent !== null ? parent.index : -1);
+        }
+        return this._appliesToNextNode;
+    }
+```
+
+
 
 # 总结
 
@@ -241,12 +357,16 @@ tNode.localNames = ['content', -1]
             flags,   // 标志位
             read,    // 标记位，标记当前查询的类型
         };
-        matches = null;
-        indexInDeclarationView = -1;
-        crossesNgTemplate = false;         // 嵌入视图
+        matches = null;  // 当 key 是负数，证明是当前query被clone 到 <ng-template>一份
+        indexInDeclarationView = -1;       // 移植视图，会继承父级的 queries，当前值代表继承的
+                                           // queries 在父级的 queries的索引
+        crossesNgTemplate = false;         // 当前query，思否跨越了ng-template
     
-        _appliesToNextNode = true;
-        _declarationNodeIndex = nodeIndex;
+        _appliesToNextNode = true;          // 标记当前query的作用范围，只在当前节点及其子节点查找。
+                                            // 例如
+        _declarationNodeIndex = nodeIndex;  // 标记当前query的nodeIndex，当运行elementEnd指令集时，说明需要关闭当前
+                                            // query的查询，对比_declarationNodeIndex 与tNode.index
+                                            // 如果相同，就 置_appliesToNextNode = false，关闭当前query的匹配能力
 }
 ----------------------------------------------------------------
 `LQueries_`:{

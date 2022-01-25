@@ -27,7 +27,7 @@ function ɵɵNgOnChangesFeature() {
             return rememberChangeHistoryAndInvokeOnChangesHook;
         }
 }
-`给指令添加 setInput 属性`
+`给指令添加 setInput 属性，初始化指令的input属性时，调用，传入值`
 ```
 
 #### NgOnChangesFeatureImpl

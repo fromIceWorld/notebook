@@ -1,4 +1,4 @@
-**依赖收集**
+## **依赖收集**
 
 我们在对数据进行观察赋能时，对我们的属性的get / set 进行劫持时[<defineReactive>]，又有一个实例化dep的操作,我们的get 被添加了一些操作【数据与视图绑定的关键步骤】:
 
@@ -18,7 +18,7 @@ set：
 
 在我们的初始化渲染阶段，我们在挂载时,执行new Watcher(),进行初始化渲染，用到我们的数据时，触发依赖收集,在最后阶段this.cleanupDeps(),将我们的newDeps，newDepIds，放到对应的deps，depIds，在后续的更新中，也会通过对比新收集的依赖和旧的依赖,来进行对比添加或者删除依赖,最后总是将newDeps，newDepIds清空。
 
-**defineReactive**
+### **defineReactive**
 
 ```javascript
   function defineReactive (
@@ -83,7 +83,7 @@ set：
   }
 ```
 
-Dep
+### Dep
 
 ```javascript
   var Dep = function Dep () {
@@ -116,7 +116,7 @@ Dep
   };
 ```
 
-watcher.prototype
+### watcher.prototype
 
 ```javascript
   

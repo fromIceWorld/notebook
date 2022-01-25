@@ -94,7 +94,7 @@ const FLAGS = 2;   //LView 的状态{CreationMode：4，Attached：128，FirstLV
 const PARENT = 3;  // parentLView = lView[PARENT]
 `记录当前view的 相邻的下一个view`          
 const NEXT = 4;    // 相邻的下一个节点
-const TRANSPLANTED_VIEWS_TO_REFRESH = 5;  // 需更新的移植视图的数量
+const TRANSPLANTED_VIEWS_TO_REFRESH = 5;  // 需更更新的移植视图的数量
 const T_HOST = 6;   //  当前LView对应的的TNode; 第一个组件的tNode 是#host
 const CLEANUP = 7;  //  清除queries,...
 const CONTEXT = 8;  // LView 的上下文【普通view 对应的class的实例，rootview对应的是rootcontext】
@@ -118,8 +118,8 @@ const CHILD_TAIL = 14;   //当前视图的最后一个个子view，【遍历嵌�
 const DECLARATION_VIEW = 15;    //声明当前lview 的 lview，也就是parent 
 const DECLARATION_COMPONENT_VIEW = 16;  // 声明lview的 view，当前视图如果是嵌入视图，就会存储parent[16]
                                         // 非嵌入视图，和 DECLARATION_VIEW一样
-const DECLARATION_LCONTAINER = 17;      // 
-          
+const DECLARATION_LCONTAINER = 17;      // 当前lview声明的LContainer
+                                        // 当前view是embeddedView 时，才有
 const PREORDER_HOOK_FLAGS = 18;        // 存储生命周期钩子的状态，及 已经执行的ngOninit钩子的个数
                                        // 在更新开始时，置为0
 const QUERIES = 19;     // 存储 queries 其中有 匹配到的页面内容
@@ -149,6 +149,8 @@ bindingStartIndex：  // 记录view中绑定的起始索引;        插值语法
 expandoStartIndex:   // 记录view中指令和注入的起始索引;   providers，directives
 firstChild：第一个TNode
 consts: 组件的属性列表【存储node属性 和 queries 名称，存储的索引在ɵɵelementStart时查询queries 时使用】
+declTNode: 声明当前tView 的tNode
+         // 当前 tNode如果是`Embedded`【嵌入视图】，declTNode指向 当前tNode 的 parent tNode  
 data:[  //TView.data 与 LView 映射
     ...
     '20':tNode【#host】
@@ -202,6 +204,7 @@ preOrderCheckHooks： 如果tNode上有指令，在解析指令阶段，存储tN
 
 ```typescript
 TNode 存储节点的数据(attribute, tagname,style....){
+    type,            // tNode 的类型
 	index,            // 存储节点LView 在rootLView的索引
 	value,           //  节点值/节点名称 【二类元素[标签]，就是节点名称；】
 	attrs,            // 节点的所有属性
@@ -220,9 +223,24 @@ TNode 存储节点的数据(attribute, tagname,style....){
     classes           // 静态 class
     classesWithoutHost //  静态class 不包含 host属性
     providerIndexes    // 存储ElmentInjector 的 providers在常春藤开始的索引
+    projection         // 投影节点
 }
 TNode
 ```
+
+#### type
+
+tNode 的类型
+
+```typescript
+`1`:Text               // 文本类  tNode                     对应的lview节点是 TextDOM
+`2`:Element            // 普通DOM/组件    生成的tNode         对应的lview节点是DOM/lview
+`4`:Container          // <ng-template>  生成的 tNode       对应lview节点是 LContainer
+`8`:ElementContainer   // <ng-container> 生成的 tNode       对应的lview节点是comment
+`16`:Projection        // <ng-content>   生成的tNode        
+```
+
+
 
 ### tNode, LView, TView, rootTView, rootLView
 
