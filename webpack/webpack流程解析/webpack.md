@@ -13,18 +13,7 @@
 
 ![webpack生命周期](C:\Users\崔冰冰\Desktop\sea\webpack\img\webpack生命周期.jpg)
 
-### compiler
-
-入口执行实例，主要做全局性功能【监控代码，启动/终止一个compilation等任务】
-
-```typescript
-1. 生成一些基础属性，并基于super 生成 一些 hooks【compiler实例】 `👇Tapable`
-2. 将options 的组件对应的生命周期钩子 注册 在compiler 的 hooks上
-
-`是webpack的 实例，初始化编译的上下文，options，初始化plugins....`
-```
-
-### Tapable[核心]
+### Tapable[核心通信机制]
 
 ```typescript
 `一种事件机制，通过提供 多种hooks，可以基于hooks进行通信`
@@ -45,6 +34,17 @@
 3. 通过call 触发         hook.call("webpack")
 ```
 
+### compiler
+
+入口执行实例，主要做全局性功能【监控代码，启动/终止一个compilation等任务】
+
+```typescript
+1. 生成一些基础属性，并基于super 生成 一些 hooks【compiler实例】 `👇Tapable`
+2. 将options 的plugin对应的生命周期钩子 注册 在compiler 的 hooks上
+
+`是webpack的 实例，初始化编译的上下文，options，初始化plugins....`
+```
+
 ### Compilation
 
 准备编译模块时创建，包含了模块资源，编译生成的资源以及变化的文件和被跟踪依赖的状态信息等等，以供插件工作时使用
@@ -61,8 +61,6 @@ compilation是对所有的require(图)中对象的字面上的编译。这个对
 `compiler`：不变的webpack的执行环境
 `compilation`：随时可变的项目文件，只要文件有改动，compilation就会被重新创建
 ```
-
-
 
 ## 模块
 
@@ -118,18 +116,11 @@ class MyPlugin{
 1. 文件监听，变化后重新编译，确定牵连的模块
 2. 将需要变动的模块的列表信息发送给浏览器 【manifest】
 3. 浏览器根据manifest请求，变动的模块的文件
-4. 文件内 执行 accept函数，执行数据替换【loader赋予文件的能力】    
+4. 文件内执行 accept函数，执行数据替换【loader赋予文件的能力】    
                         在文件中插入【module.hot.accept(path,callback) 函数;
                                    callback是执行的更新逻辑】
 
 `module.hot.accept(path,callback)`：并不需要在每个文件中添加此逻辑
-
-
-
-
-
-
-
 
 
 `webpack4以前，热更新文件以模块为单位
@@ -141,7 +132,7 @@ class MyPlugin{
 ```typescript
 `依赖于ES6 Modules，因为ESM是静态的` 【CMD是动态的】
 
-1. webpack 通过静页语法分析将不用export的变量，置为 free variable
+1. webpack 通过静页语法分析将没有export的变量，置为 free variable
 2. uglify 同样通过静态语法分析，找出不用的变量声明，将他们删除
 ```
 

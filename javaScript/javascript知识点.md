@@ -68,7 +68,77 @@ son1.__proto__ = Mothor.prototype;
 `__proto__`:是非标准属性【后续可能被取消】，不建议直接取值，Reflect.getPrototypeOf(obj)
 ```
 
-##### 继承
+##### ES5继承
+
+```typescript
+function Parent(){
+    this.colors = ['red', 'blue']
+}
+Parent.prototype = {
+    this.hobby = '画画'
+}
+function Child(){}
+----------------------------------------------------
+`原型链继承`：子类的prototype 指向 父类的实例【无法向父构造函数传值👇，后续操作prototype会影响Parent】
+	Child.prototype = new Parent();
+`借用构造函数继承`：在child构造函数中，调用parent构造函数【未继承Parent.prototype属性】
+	function Child(){
+        Parent.call(this)
+	}
+`组合式继承`：以上👆两个组合【调用了两次Parent构造函数】
+    function Child(){
+        Parent.call(this);
+    }
+    Child.prototype = new Parent()
+`原型式继承`：【子类参数需后续添加】
+    function newPrototype(obj){
+        function Child(){};
+        Child.prototype = obj; 
+        return new Child();
+    }
+    let child1 = newPrototype(new Parent())
+`寄生式继承`：套装👆，加入初始化子类实例的操作
+	function subObject(obj){
+        let sub = newPrototype(obj);
+        sub.name = '**';
+        return sub
+    }
+	let sup = subObject(new Parent);
+`寄生组合式继承`【较完善，是babel 编译 ES6 类的方式】
+	function newPrototype(obj){
+        function Child(){};
+        Child.prototype = obj; 
+        return new Child();
+    }
+    let subPrototype =  newPrototype(Parent.prototype);
+	function Child(){
+        Parent.call(this)
+	}
+	subPrototype.constructor = Child; //constructor指向
+	Child.prototype = subPrototype;
+
+`newPrototype`可使用 Object.create() 代替；	
+```
+
+###### ES5继承和ES6继承的区别
+
+```typescript
+`ES5`：
+	1.先创建子类的实例对象，再将父类的方法添加到this上
+    2.通过原型，构造函数实现
+`ES6`：
+	1.先创建父类的实例对象this，然后再用子类的构造函数修改this
+    2.class定义类，extends实现继承，子类必须在constructor调用super方法，因为子类没有自己的this
+	class Parent{}
+	class Child extends Parent{
+        constructor(){
+            super();
+            this.
+        }
+    }
+```
+
+
 
 ##### 作用域
 
@@ -116,7 +186,6 @@ checkscope();
 ##### **this指向**
 
 ```javascript
-
 this的指向是在运行时确定的，按照最基础的理解，谁调用函数，this就指向谁，但是这样的理解是片面的，只是根据this的表现去总结this，最根本上，JavaScript对于this的处理是:
     判断【MemberExpression】是不是Reference，如果是Reference，用GetValue获取base值，如果base是对象，     this指向base，如果base是EnvironmentRecord，返回undefined，如果不是Reference返回undefined。
     if(MemberExpression === Reference){
@@ -216,21 +285,25 @@ this的指向是在运行时确定的，按照最基础的理解，谁调用函�
 
 ```javascript
 依托于事件冒泡的，统一管理机制，在事件冒泡时，冒泡到父级，父级根据event.target识别事件目标，做出相应操作。
+`currentTarget`：触发事件冒泡的元素；
+`target`：添加事件的元素
 ```
 
 ##### 捕获 / 冒泡
 
 ```javascript
-事件传播：
+`事件传播`：
 	事件发生在某个DOM元素时，并不局限在此DOM元素上，会向上/向下传播。
-事件捕获：
+`事件捕获`：
 	从window ->document ->body，向下寻找元素，直到目标元素，
-事件冒泡：
+`事件冒泡`：
 	从目标元素开始，向上传播，直到window
+    `currentTarget`:触发事件的元素
+    `target`：事件绑定的元素
     isCapture:默认为false，在冒泡阶段发生，为true在捕获阶段发生。
     el.addEventListener(event, callback, isCapture);
     在callback里可用event.stopPropagation() / event.cancelBubble = true             取消继续传播
-取消默认事件:
+`取消默认事件`:
 	e.preventDefault() / e.returnValue = false
 ```
 
@@ -287,9 +360,8 @@ el.getAttribute(key);
            return function (){
                if(timer){
                    clearTimeout(timer)
-               }else{
-                   timer = setTimeout(()=>fn(), time)
                }
+               timer = setTimeout(()=>fn(), time)
            }
         }
 `节流：` function thr(fn, time){
@@ -312,8 +384,6 @@ el.getAttribute(key);
 
 ```
 
-
-
 ##### 模块化
 
 ```typescript
@@ -334,9 +404,11 @@ el.getAttribute(key);
     引入：
          require([dependencies], function(dependencies){})           
            
-	0- 主要是requireJS 
+	0- 主要是`requireJS` 
 	1- 【依赖前置】，在需要的依赖加载完成后，运行回调函数。[解决依赖顺序问题]
 	2- 异步[解决了js同步加载浏览器等待问题]
+
+
 `CMD`:
 	输出：
     	define(id?, deps?, factory)
@@ -349,8 +421,9 @@ el.getAttribute(key);
     引入：
         seajs.use(['myModule.js'], function(my){
 		});
-	0- 主要是seaJS
+	0- 主要是`seaJS`
 	1- 【就近依赖】,用到某个模块时再require
+`UMD`:是AMD和CommonJS和糅合；判断是否支持Node模块（exports属性），存在就使用node模块，再判断是否支持AMD(define),存在则使用AMD方式加载模块
 	
 ES6:
 	导出：
@@ -365,6 +438,10 @@ AMD 与 CMD的不同:
       CMD 在加载完成define好的模块，仅仅是下载不执行，只有需要用时require才执行模块【按需加载】
       AMD用户体验好，CMD性能好。
 
+浏览器支持CommonJS：
+----------------------------------------------------------------------
+`浏览器不支持CommonJS的原因`：缺少 module，exports，require，global;      
+
 ```
 
 ------
@@ -373,7 +450,8 @@ AMD 与 CMD的不同:
 
 ```javascript
 let st = '1.23b'
-parseFloat(st)
+parseFloat(st)  //从头开始解析数字，直到遇到非数字
+parseInt('101', 2) => 5
 ```
 
 ##### dom事件
@@ -383,7 +461,7 @@ parseFloat(st)
 ```typescript
 mousewheel[滚轮事件]：deltaY，wheelDelta和detail 判断滚轮滚动方向【在各浏览器支持程度不同】
 deltaY：正值向下，负值向上,与操作系统的鼠标设置有关，绝对值为滚动幅度
-wheelDaelta:向上120，向下-120,但为常量，只能判断方向，与滚轮速率无关[`chrome,Edge`支持]
+wheelDelta:向上120，向下-120,但为常量，只能判断方向，与滚轮速率无关[`chrome,Edge`支持]
 detail:向上3，向下-3,但为常量，只能判断方向，与滚轮速率无关[只有`Firefox`支持]
 detail，wheelDelta：与滚轮速率无关，无用属性
 
@@ -402,7 +480,7 @@ i++
 
 ```typescript
 `判断某个属性是否在对象及其原型链上`
-in 会查到 自身的不可枚举属性
+in 会查到 自身的可枚举属性
 in 会去对象的 原型链上寻找属性
 ```
 
@@ -544,8 +622,6 @@ Array.from(new Array(m), ()=>new Array(n));
              第二个参数相当于对第一个参数进行map
 ```
 
-
-
 ### ES6
 
 ------
@@ -602,6 +678,8 @@ let，const，class声明的全局变量，不属于顶层对象的属性
 
 ```typescript
 键值对的集合（键不在局限于字符串）
+`特性：`
+1.先声明的 key-value，在枚举时会先枚举出来;【可使用此特性实现缓存淘汰算法LRU】
 ```
 
 ##### weakMap
@@ -610,7 +688,8 @@ let，const，class声明的全局变量，不属于顶层对象的属性
 `我们想在某个对象上存放一些数据，但是会形成对这个对象的引用`
 因此引入weakMap 对对象弱引用，不妨碍垃圾回收机制
 
-无遍历操作（keys(),values(),entries()）,无size属性，不支持clear，因此只有get(),set(),has(),delete()
+无遍历操作（keys(),values(),entries()）,
+无size属性，不支持clear，因此只有get(),set(),has(),delete()
 ```
 
 ##### weakRef
@@ -621,8 +700,6 @@ let target = {};
 let wr = new WeakRef(target);
 `wr.deref()`:获取原始对象
 ```
-
-
 
 ##### Set
 
@@ -697,8 +774,6 @@ function factorial(n, total) {
 factorial(5, 1) // 120
 ```
 
-
-
 ##### Class
 
 ```typescript
@@ -713,8 +788,6 @@ factorial(5, 1) // 120
 `protected`：只能在类及子类中使用，实例中无法使用
 
 ```
-
-
 
 ##### **proxy**
 
@@ -753,7 +826,7 @@ proxy是在目标对象之前假设一层拦截
      3. 返回的是新对象，可以只操作新对象，Object.defineProperty只能遍历对象属性直接修改
      4. 新标准
 `缺点`：
-     1. 暂时没有Object.defineProperty 兼容新好 
+     1. 暂时没有Object.defineProperty 兼容性好 
      
      
      
@@ -808,12 +881,15 @@ proxy是在目标对象之前假设一层拦截
         // true
 ```
 
-
-
 ##### Reflect
 
 ```typescript
+`反射：程序在运行时能够获取自身的信息`
+for...in : 也可实现反射
+
 `设计目的:`
+`0.`将程序中的反射汇总到一起Reflect
+
 `1.`将Object对象中一些属于内部的方法(Object.defineProperty),放到Reflect对象上。
     现阶段某些方法同时在Object和Reflect上，未来新方法只部署在Reflect对象上，也就是在Reflect上
     获取语言内部的方法
@@ -835,8 +911,6 @@ proxy是在目标对象之前假设一层拦截
 
 `Proxy拦截对象的属性行为，采用Reflect确保完成原有的行为，然后再完成Proxy部署的额外的功能`
 ```
-
-
 
 ##### Promise
 
@@ -878,8 +952,6 @@ function makeIterator(array) {
 }
 ```
 
-
-
 ##### async / await
 
 ```typescript
@@ -898,13 +970,11 @@ function makeIterator(array) {
 任何一个await语句后面的Promise对象变为reject状态，那么整个async函数都会中断执行
 ```
 
-
-
 ##### generator
 
 ##### module
 
-ES6的模块是一种`静态定义`，在代码静态解析阶段生成
+ES6的模块是一种`静态定义`，在【代码静态解析阶段】生成
 
 与CommonJS的不同：
 

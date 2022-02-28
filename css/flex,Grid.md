@@ -58,12 +58,12 @@ Flexible Box:弹性布局
 
 ##### 子元素属性
 
-```
+```typescript
 order:定义子元素的排列顺序，数值越小，排列越靠前，默认为0；
 flex-grow：定义元素的放大比例，默认为0，即如果存在剩余空间，也不放大。
 flex-shrink：定义元素的缩小比例，默认为1，即如果空间不足，该项目将缩小。
-flex-basis：在分配多余空间之前，项目占据的主轴空间(可以设置width)，默认auto
-flex：<flex-grow> <flex-shrink> <flex-basis>的简写，默认 1 0 auto
+flex-basis：`伸缩基准值`在分配多余空间之前，项目占据的主轴空间(可以设置width)，默认auto
+flex：<flex-grow> <flex-shrink> <flex-basis>的简写，默认 `1 0 auto`
 align-self：允许单个项目有与其他项目不一样的对齐方式，覆盖align-items属性，默认auto，继承父属性
 ```
 

@@ -1,6 +1,6 @@
 ## Tapable
 
-webpack 中 各个功能的通信核心
+webpack 中 `plugin`的通信核心【发布-订阅模式】
 
 ```typescript
 tapable 以 class hook 为基类，派生出有特定功能的 子 hook:
