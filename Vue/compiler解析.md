@@ -370,8 +370,6 @@ filters:[] //保存过滤器
     return `_f("${filter2}")(${exp1})`
 ```
 
-
-
 **processAttrs**
 
 ------
@@ -549,8 +547,6 @@ value = el.alias ？？？？？？？
 将这些属性添加到attrs中
 name:'muted'属性,el.props=[{name:'muted',value:true}]    
 ```
-
-
 
 **preTransforms**  
 

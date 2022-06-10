@@ -50,7 +50,7 @@ _l  【renderList】帮助我们渲染 有v-for指令的节点
 data:{list:[{name:'zhang'}]}
 template:<div v-for="item in list">{{item}}</div>
 生成的渲染函数
-with(this){return _l((list),function(item){return _c('div',[_v(_s(item))])})}
+`with(this){return _l((list),function(item){return _c('div',[_v(_s(item))])})}`
 用到我们的_l _c _v _s四种渲染函数
 _c在我们initRender时放到实例上【_c的由来在下面分析】
 

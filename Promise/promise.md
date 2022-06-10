@@ -4,7 +4,7 @@ promise 是优于callback 方法  解决异步回调的方式;
 
 1. promise 是一种链式调用，有pendding，resolved，rejected 状态，初始为pendding
 2. 通过resolve，reject 函数更改状态来开启下一步调用，resolved为成功，rejected为失败
-3. then 是链式调用的链节点，有成功回调和失败回调，会返回新的promise，当回调函数接收的值是thenable ，会将【新的promise】的resolve，reject 控制权交给 thenable
+3. then 是链式调用的链节点，有成功回调和失败回调，会【返回新的promise】，当回调函数接收的值是thenable ，会将【新的promise】的resolve，reject 控制权交给 thenable
 4. thenable 兼容其他的有then的类promise
 
 在promise 中 有 resolve，reject 方法，
@@ -203,16 +203,27 @@ class Promise{
 }
 ```
 
-
-
 ## then
+
+```typescript
+`返回新的promise`
+then的执行逻辑取决于依赖的promise的决议【resolve，reject】，
+但是promise设计的较灵活，而且可以兼容类promise，当resolve函数返回一个新的promise【用户创建】时，then对应的promise的状态也应该交给新promise【用户创建】，
+------------------------------------------------------------
+当没有新的promise【x是对象，且有对应的then函数 | x就是函数】时，默认返回resolved状态，即使当前then执行的是reject函数
+------------------------------------------
+有新的promise时，当前then的决议权应该交给新promise【将resolve，reject交给新promise】
+```
+
+
 
 ## catch
 
 ```typescript
+`catch是一个只有失败回调的then`【当函数为空时，promise会有一个空函数】
 class Promise{
     catch(fn){
-        this.then(null,fn)
+        return this.then(null,fn)
     }
 }
 ```
@@ -225,5 +236,19 @@ class Promise{
         return this.then(fn,fn)
     }
 }
+```
+
+# async
+
+```typescript
+`标识一个函数是异步函数，返回一个promise`
+```
+
+# await
+
+```typescript
+`用于分割async中代码的执行顺序，使异步像同步一样执行`
+1.await后面表达式返回的是普通值，
+2.await 后面表达式返回promise
 ```
 

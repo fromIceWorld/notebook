@@ -94,7 +94,7 @@ function resolvePro(pro2, x, resolve, reject) {
     if (typeof x == 'object' || typeof x == 'function') {
         try {
             let then = x.then;
-            if (typeof x == 'function') {
+            if (typeof then == 'function') {
                 then.call(
                     x,
                     function resolvePromise(y) {
@@ -147,13 +147,31 @@ myPromise.resolve = function resolve(value) {
     });
     return pro3;
 };
-myPromise.reject = function rehject(reson) {
-    return new myPromise((resolve, reject) => {
-        reject(reason);
+myPromise.reject = function rehject(value) {
+    if (value instanceof myPromise) {
+        return value;
+    }
+    let pro4 = new myPromise((resolve, reject) => {
+        if (
+            value &&
+            typeof value === 'object' &&
+            typeof value.then === 'function'
+        ) {
+            try {
+                setTimeout(() => {
+                    value.then(resolve, reject);
+                });
+            } catch (e) {
+                reject(e);
+            }
+        } else {
+            reject(value);
+        }
     });
+    return pro4;
 };
 myPromise.prototype.catch = function (e) {
-    this.then(null, e);
+    return this.then(null, e);
 };
 myPromise.prototype.finally = function (callBack) {
     return this.then(
@@ -174,6 +192,7 @@ myPromise.all = function (promises) {
             resolve(result);
         } else {
             for (let i = 0; i < result.length; i++) {
+                // 处理非Promise
                 myPromise.resolve(promises[i]).then(
                     (data) => {
                         if (index < promises.length) {

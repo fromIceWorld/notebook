@@ -67,7 +67,7 @@ AppComponent的编译结果：'./编译结果文件/AppComponent.js'
 ### `2.`tokenize模板解析
 
 ```typescript
-`通过ASCII 对比 解析【<tag, <--, <![, </tag】`
+`通过ASCII 对比 解析【<tag, <!--, <![, </tag】`
 tokens：token集合🧩
 _currentTokenStart：当前token的其实状态
 _currentTokenType：当前token 的类型【开始标签，text，闭合标签，注释,....】

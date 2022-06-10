@@ -90,6 +90,26 @@ compilation是对所有的require(图)中对象的字面上的编译。这个对
 module.exports = function (content) {
     return replace(content);
 };
+【loader执行顺序】：use: ['a-loader', 'b-loader', 'c-loader'],
+`
+|- a-loader `pitch`
+  |- b-loader `pitch`
+    |- c-loader `pitch`
+      |- requested module is picked up as a dependency
+    |- c-loader normal execution
+  |- b-loader normal execution
+|- a-loader normal execution
+`
+`pitch`:属于loader的方法，在loader函数执行前执行;
+如果pitch有返回值，则阶段后面的loader，直接折返：
+例如b的pitch函数，返回数据，则执行顺序是：
+`
+|- a-loader `pitch`
+  |- b-loader `pitch`
+|- a-loader normal execution
+`
+------------------------------------------
+`例如`[style-loader,css-loader]的配置；因为css-loader返回的是一个文件【将css到处为js】，style-loader获取到文件后并不能处理，style-loader只需要css值，因此在style-loader中通过css-loader require文件内容，但是正常逻辑style-loader接收到的是css-loader返回的js，无法解析，因此使用pitch，调用css-loader返回文件内容，并终端后面css-loader的执行，直接折返
 ```
 
 ## plugin

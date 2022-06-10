@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8" />
+
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script src="./common/compilerHTML.js"></script>
+    <script src="./common/matchDynamicTag.js"></script>
+    <script src="./main.ts" defer></script>
+    <script
+        src="http://localhost:63498/polyfills.js"
+        defer=""
+        charset="utf-8"
+    ></script>
+</head>
+<body>
+    <ul>
+        <li class="btn" onclick="toMic('vue')">Vue</li>
+        <li class="btn" onclick="toMic('Angular')">Angular</li>
+    </ul>
+    <app-root></app-root>
+    <base-element src=""> </base-element>
+</body>
