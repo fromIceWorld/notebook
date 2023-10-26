@@ -23,22 +23,22 @@
  * @return {number[]}
  */
 var dailyTemperatures = function (temperatures) {
-    let stack = [],
-        result = [];
+    let result = [];
     for (let i = temperatures.length - 1; i >= 0; i--) {
-        let index = stack.length - 1,
+        let index = i + 1,
             count = 0;
-        while (index >= 0) {
-            if (stack[index] > temperatures[i]) {
+        while (index < temperatures.length) {
+            if (temperatures[index] > temperatures[i]) {
                 count++;
                 break;
             } else {
-                index--;
-                count++;
+                index++;
+                if (index < temperatures.length) {
+                    count++;
+                }
             }
         }
-        result[i] = index < 0 ? 0 : count;
-        stack.push(temperatures[i]);
+        result[i] = count;
     }
     return result;
 };

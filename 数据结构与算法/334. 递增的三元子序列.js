@@ -32,7 +32,6 @@ var increasingTriplet = function (nums) {
     }
     let cache = [],
         pre = Infinity,
-        next = -Infinity,
         len = nums.length,
         result = false;
     for (let i = 0; i < len; i++) {
@@ -43,6 +42,7 @@ var increasingTriplet = function (nums) {
             pre = nums[i];
         }
     }
+    let next = -Infinity;
     for (let end = len - 1; end >= 0; end--) {
         if (nums[end] < next) {
             if (cache[end] == true) {

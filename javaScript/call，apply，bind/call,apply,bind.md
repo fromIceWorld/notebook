@@ -1,7 +1,7 @@
 ## call
 
 ```javascript
-var foo ={
+var foo = {
     value:'call'
 }
 function bar(name,age){
@@ -32,13 +32,9 @@ bar.call(foo,'Ace',12)
 关键点：javaScript 中 的 this的指向；参数长度不定；
 
 ```javascript
-Function.prototype.call2=function(context){
+Function.prototype.call2=function(context,...otherArg){
     context.fun = this || window               //foo.fun = bar 为null则指向window
-    let arg = []              
-    for(var i = 1;i<arguments.length ; i++){
-        arg.push('arguments['+i + ']')
-    }                                             //['arguments[1]',['arguments[2]'...]
-    var result = eval('context.fun(' + arg + ')') //context.fun( arguments[1] ...)
+    var result = context.fun(...otherArg) //context.fun( arguments[1] ...)
     delete context.fun
     return result                                 //bar可返回
 }
@@ -51,13 +47,9 @@ apply和call相似 只是 传入参数不同，apply（context , [ params1 , par
 ```javascript
 Function.prototype.apply2 = function(context,arr){
     context.fun = this
-    let arg = []
     let result
     if(arr && arr.length>0){
-        for(var i = 0;i<arr.length ; i++){
-            arg.push('arr['+i + ']')
-        }
-        result = eval('context.fun(' + arg + ')')
+        result = context.fn(arr)
     }else {
         result = context.fn()
     }
@@ -75,17 +67,12 @@ Function.prototype.apply2 = function(context,arr){
 ```typescript
 第一个参数是，函数要绑定的作用域，后续的参数是 传入的参数
 Function.prototype.bind = function(arg){
-    let context = arguments[0];
-    let params = [];
-    for(let index in arguments){
-        if(index !== 0){
-            params.push(arguments[index])
-        }
-    };
+    let fn = this;
+    let [context,...params] = arguments[0];
     let middle = function(){};
     middle.prototype = this.prototype;
-    function result(addConditions){
-        fn.apply(context, [...params, ...arguments])
+    function result(...addConditions){
+        fn.apply(context, [...params, ...addConditions])
 	}
     result.prototype = new middle()
     return result

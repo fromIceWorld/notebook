@@ -9,11 +9,8 @@
 // 移动的衣服数ans: Math.math(left, right)
 
 function need(arr) {
-    let total = 0,
+    let total = arr.reduce((pre, cur) => pre + cur, 0),
         len = arr.length;
-    for (let i = 0; i < len; i++) {
-        total += arr[i];
-    }
     if (total / len > 1 && total % len == 0) {
         let ans = 0,
             left = 0,

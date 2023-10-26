@@ -3,18 +3,18 @@
 let resource = [0, 1, 2, 3, 5, 5, 5, 5, 5, 6, 7, 8, 9],
     target = 5,
     result = [-1, -1];
-function binarySearch(num, target, leftOrRight) {
-    let start = 0,
-        end = num.length - 1,
-        result;
-    while (start <= end) {
-        let mid = Math.floor((end - start) / 2);
-        if (num[mid] > target || (leftOrRight == 0 && num[mid] >= target)) {
-            end = mid - 1;
-            result = mid;
+function binarySearch(num, target, start, end) {
+    if (start <= end) {
+        let mid = Math.floor((end + start) / 2);
+        if (num[mid] > target) {
+            binarySearch(num, target, start, mid - 1);
+        } else if (num[mid] < target) {
+            binarySearch(num, target, mid + 1, end);
         } else {
-            start = mid + 1;
+            result[0] = result[0] == -1 ? mid : Math.min(result[0], mid);
+            result[1] = result[1] == -1 ? mid : Math.max(result[1], mid);
+            binarySearch(num, target, start, mid - 1);
+            binarySearch(num, target, mid + 1, end);
         }
     }
-    return result;
 }

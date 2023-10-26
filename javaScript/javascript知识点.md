@@ -5,26 +5,7 @@
 ##### 下载功能
 
 ```typescript
-`1.` location.href = '接口'             //  赋值
-      // 只支持 get 请求，去服务器拉取文件 
-`2.` var blob = new Blob([res], {
-          type: "application/vnd.ms-excel;ctf-8",
-        }); 
-	 a = document.createElement('a');
-     href = window.URL.createObjectURL(blob);
-     a.href = href;
-	 a.setAttribute(
-          "download",
-          decodeURI(
-            res.headers.get("content-disposition").split("filename=")[1]
-          )
-        );
-	 document.body.appendChild(downEL);
-     downEL.click();
-     document.body.removeChild(downEL);
-     window.URL.revokeObjectURL(href);
-     
-2 支持，post 请求传参，接收二进制流
+`Blob`
 ```
 
 ##### 函数
@@ -39,34 +20,7 @@ a.length 无法通过赋值修改。
 
 ##### 原型，原型链，构造函数，实例
 
-```javascript
-function Mothor(name){
-    this.name = name
-}
-Mothor.prototype.color = 'yellow';
-var son1 = new Mothor('first');
-var son2 = new Mothor('second');
- 
-Mothor.prototype = {
-    constructor:Mothor,
-    __proto__:Object.prototype
-}
-
-son1.__proto__ = Mothor.prototype;
-son1.__proto__ = Mothor.prototype;
-
-构造函数:
-	构造函数是一个母体，通过 new 来生下实例，母子之间通过__proto__保持(子对母的)单向连接,母体还有自己的     原型，保存constructor（指向自身），和__proto__（指向原型的构造函数的原型Object.prototype）
-原型:
-	原型是构造函数的数据库，多个实例都通过__proto__共享同一个数据库。
-原型链:原型与实例之间的关联(__proto__).
-实例:是构造函数生下的产物(对象)，通过__proto__与母连接。
-
-取值规则是:当在实例上找不到对应的数据，就根据__proto__去构造函数的原型(prototype)上找，如果还找不到，继          续根据构造函数的原型的__proto__向上找，找到Object.prototype，如果还找不到再继续找，                Object.prototype.__proto__ 是 null，取值结束。
-
-
-`__proto__`:是非标准属性【后续可能被取消】，不建议直接取值，Reflect.getPrototypeOf(obj)
-```
+[MDN](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Inheritance_and_the_prototype_chain)
 
 ##### ES5继承
 
@@ -124,16 +78,16 @@ function Child(){}
 
 ```typescript
 `ES5`：
-	1.先创建子类的实例对象【new】，再将父类的方法添加到this上【在构造函数中绑定this】
+	1.先创建子类的实例对象【new】，再将父类的方法添加到this上【Parent.call(this)】
     2.通过原型，构造函数实现
 `ES6`：
-	1.先创建父类的实例对象this，然后再用子类的构造函数修改this
-    2.class定义类，extends实现继承，子类必须在constructor调用super方法，因为子类没有自己的this
+	1.先创建父类的实例对象this【super()】，然后再用子类的构造函数修改this【this.xx = **】
+    2.class定义类，extends实现继承，`子类必须在constructor先调用super方法`，因为子类没有自己的this
 	class Parent{}
 	class Child extends Parent{
         constructor(){
             super();
-            this.
+            this.xx = **
         }
     }
 ```
@@ -143,7 +97,7 @@ function Child(){}
 ```javascript
 作用域是代码执行过程中取值的区域，分为全局作用域和函数作用域，在一段代码中，会有一个全局作用域和n个函数作用域层层嵌套，在代码执行过程中作用域会不断的入栈和出栈，【维持全局作用域与函数作用域之间的关系,就是执行上下文】。
 
-在执行代码的过程中，变量对象 / 作用域链 / this 保证我们的取值，
+`在执行代码的过程中，【变量对象 / 作用域链 / this】保证我们的取值`
 var scope = "global scope";
 function checkscope(){
     var scope2 = 'local scope';
@@ -177,11 +131,11 @@ checkscope();
         },
         Scope:checkscope.[AO, [Scope]],
 }
-6- 在retrun时，返回scope2，函数执行完毕，checkscopeContect出栈
+6- 在return时，返回scope2，函数执行完毕，checkscopeContect出栈
 	stack  = [globalContext]
 ```
 
-##### 改变js执行执行上下文
+##### 改变js执行上下文
 
 ###### with
 
@@ -209,11 +163,14 @@ function runEval(){
 
 ###### 箭头函数
 
+`箭头函数` 的 `this` 被设置为他被创建时的环境
+
 ```typescript
-`箭头函数的this声明时已经确定`，由上下文决定;
+`箭头函数的this声明时已经确定`，继承自执行上下文[全局作用域，普通函数作用域]的this;
 a = {
     fn:function(){
-        return ()=>{console.log(this)}  //声明时上下文的this，【fn的this，指向a，不会变】👇
+        return ()=>{console.log(this)}  //上下文是fn函数，箭头函数的this继承fn的this
+        // fn 的this变化时，箭头函数的this也变化
     }
 }
 `this指向`
@@ -224,92 +181,12 @@ a = {
 ###### 普通函数
 
 ```javascript
-`this的指向是在运行时确定的`，按照最基础的理解，谁调用函数，this就指向谁，但是这样的理解是片面的，只是根据this的表现去总结this，最根本上，JavaScript对于this的处理是:
-    判断【MemberExpression】是不是Reference，如果是Reference，用GetValue获取base值，如果base是对象，     this指向base，如果base是EnvironmentRecord，返回undefined，如果不是Reference返回undefined。
-    if(MemberExpression === Reference){
-    	if(typeOf base === Object){
-    		this = base
-    	}else if(base === EnvironmentRecord){
-    		this = undefined
-    	}
-    } else{
-        this = undefined
-    }
-
-0- Reference
-	是对语言底层行为的一种描述，Reference 定义为“被解析的命名绑定，
-    (由标识符解析和属性访问创建）；
-     标识符:数据被命名之后，名字就是标识符；
-     标识符解析：一层层的寻找数据，foo(寻找foo函数)
-     属性访问：foo.bar
-	Reference = {
-		base:, 属性所在的对象或者是EnvironmentRecord，
-				值为[ undefined, an Object, a Boolean, a String, a Number, 
-				     or an environment record ]
-		name:,属性的名称
-		strict:是否是严格模式
-	}
-    GetBase：是获取Reference的base值的一种方法；
-    IsPropertyReference：判断base是否是一个对象，是就返回true;
-	GetValue:直接获取对应的name的值，返回的是真正的值，而不是Reference；
-1- 确定函数的调用表达式
-	var foo = {
-    bar: function () {
-        return this;
-    }
-	};
-
-    foo.bar(); // foo
-
-    // bar对应的Reference是：
-    var BarReference = {
-        base: foo,
-        propertyName: 'bar',
-        strict: false
-    };
-
-
-2- 在调用时，确认属性访问表达式(MemberExpression)，如果MemberExpression是Reference，GetValue返回     base，
-	2.1 通过IsPropertyReference(v)来判断，当v是对象，this = base;
-3-当遇到MemberExpression被包裹，GetValue获取被包裹的结果  (=  || ，)
-	1.(foo.bar = foo.bar)()；返回的是foo.bar的值是一个函数，不是Reference
-	2.(false || foo.bar)()；返回的是foo.bar的值是一个函数，不是Reference
-	3.(foo.bar, foo.bar)()；返回的是foo.bar的值是一个函数，不是Reference
-	因此在严格模式下this指向undefined，非严格模式下指向window。
-   	
+`this的指向是在运行时确定的`，按照最基础的理解，谁调用函数，this就指向谁。
 ```
 
 ##### toString / valueOf  -> 隐式 / 显示转换
 
-```javascript
-出现背景:带有 +,-,==,++,--,*,!,/。      /等关系运算符/拼接符等情况;
-参与数据：基本数据类型(null,undefined,Boolean,number,string,Symbol)
-        复杂数据类型(object,array,function,regExp...)
-难点1：字符串拼接符(+)和关系运算符(+)的区分，
-	 - 当+两边有一边是字符串时，+就是字符串拼接符。将另一种类型转换为基本类型，再转换为            string类型
-     - 不满足第一点 就是运算符。将两边最终转换为number运算。
-难点2：复杂数据类型的转换。
-	 - 当遇到拼接符时会先运行valueOf，如果返回值是基本类型直接返回，不是基本类型，运行            toString(),返回的是基本数据类型就返回，如果不是就报错。
-难点3：当两边都是字符串时，比较unicode码
-难点4：数组的toString会返回字符串拼接，对象的toString会返回[object,Object]
-难点5：!运算符 会将(0,NaN,undefined,null,'',false)认为是false，转换为true，
-       其他情况都认为是true,转换为false。而且!优先级高于 ==
-`==`：两侧数据类型不同时，会进行隐式转换；
-      `1.` 当两侧有一侧是number 时，会将另一侧不是number的 数据转换为number
-坑：
-	[] == 0 true
-	![] == 0 true
-
-	[] == ![] true
-	[] == [] false    //比较的是地址
-
-	{} == !{} false
-	{} == {}  false   //比较的是地址
-
-
-注：valueOf 和 toString都是Object.prototype上的函数，可在对象内定义遮蔽。
-
-```
+[MDN](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Symbol/toPrimitive)
 
 ##### 三种事件模型
 
@@ -323,8 +200,8 @@ a = {
 
 ```javascript
 依托于事件冒泡的，统一管理机制，在事件冒泡时，冒泡到父级，父级根据event.target识别事件目标，做出相应操作。
-`currentTarget`：触发事件冒泡的元素；
-`target`：添加事件的元素
+`currentTarget`：事件绑定的元素;
+`target`：事件触发的元素;
 ```
 
 ##### 捕获 / 冒泡
@@ -345,36 +222,13 @@ a = {
 	e.preventDefault() / e.returnValue = false
 ```
 
-##### DOM操作
-
-```javascript
-document.createDocumentFragment()  //创建DOM片段
-        .createElement()           //创建具体节点
-        .createTextNode()          //创建文本节点
-el.appendChild(node)               //添加子节点
-  .removeChild(node)               //移除子节点
-  .replaceChild(new, old)          //替换子节点
-  .insertBefore(new, old)          //在某一个节点前添加节点
-document.getElementById();
-         getElementsByName();
-         getElementsByTagName();
-         getElementsByClassName();
-         querySelector();
-         querySelectorAll();
-el.getAttribute(key);
-   setAttribute(key, value);
-   hasAttribute(key);
-   removeAttribute(key);
-
-```
-
 ##### **垃圾回收机制**
 
 ```javascript
 1- 引用计数法:
 	定义：计算对对象的引用次数，当为0时，说明已经不需要了，可被回收。
     缺点：【循环引用】。
-2- 标记清除法
+2- 标记清除法[✔]
 	定义：将'不再使用的对象'定义为'无法到达的对象'，从根部(全局对象)走，能到达的对象，是还需要的，无法到达的对象被标记为不再使用，进行回收
 ```
 
@@ -412,14 +266,6 @@ el.getAttribute(key);
               }
           }
         }
-```
-
-
-
-##### **call / apply / bind**
-
-```
-
 ```
 
 ##### 模块化
@@ -476,7 +322,7 @@ AMD 与 CMD的不同:
       CMD 在加载完成define好的模块，仅仅是下载不执行，只有需要用时require才执行模块【按需加载】
       AMD用户体验好，CMD性能好。
 
-浏览器支持CommonJS：
+浏览器如何支持CommonJS：
 ----------------------------------------------------------------------
 `浏览器不支持CommonJS的原因`：缺少 module，exports，require，global;      
 
@@ -491,9 +337,10 @@ AMD 与 CMD的不同:
 let st = '1.23b'
 parseFloat(st)  //从头开始解析数字，直到遇到非数字
 parseInt('101', 2) => 5
+(5).toString(2) => 101
 ```
 
-##### dom事件
+##### 滚轮事件
 
 ###### mousewheel
 
@@ -532,7 +379,6 @@ var声明的变量是全局的，每一次循环，都改变全局变量，循�
 let生命的变量只在当前循环内有效，`每一次循环都会声明一个变量`，循环体内的变量指向上级作用域声明的变量
 
 ------------------------------------------------------------------
-
 
 for/in：遍历对象`自身可继承，枚举`属性【操作的是`key`,对象：key，数组：index,字符串：index】
 可配合 对象.hasOwnProperty(key),选择是否过滤原型上的值。
@@ -618,8 +464,6 @@ Object.create(
 `getOwnPropertySymbols:`获取自身所有的Symbols属性
 ```
 
-
-
 ##### Object.defineProperty
 
 ```typescript
@@ -637,14 +481,12 @@ Object.create(
 判断对象自身中是否有对应属性
 ```
 
-
-
 ##### slice,split,splice
 
 ```typescript
 slice函数【string,Array】:slice(start,end?)`复制子集合，从start开始，end结束，不取end,`
 split函数【string】：split(值或者正则,限制返回数组的最大数量)`不影响原字符串，切割后返回数组`
-splice函数【Array】splice(start,numbe?,...add)：`操作数组本身本身,从start坐标开始，切割指定数量的值,不指定值就全部切割，为null则不切割，第三个参数后都是往数组添加的值：最终返回切割的值`                   
+splice函数【Array】splice(start,numbe?,...add)：`操作数组本身本身,从start坐标开始，切割指定数量的值,为null则全切割，第三个参数后都是往数组添加的值：最终返回切割的值`                   
 ```
 
 ### 数组
@@ -678,8 +520,6 @@ Array.from(new Array(m), ()=>new Array(n));
 				Math.round(-2.5) => -2【👆】
 				Math.round(-2.6) => -3
 ```
-
-
 
 ### ES6
 
@@ -739,6 +579,7 @@ let，const，class声明的全局变量，不属于顶层对象的属性
 键值对的集合（键不在局限于字符串）
 `特性：`
 1.先声明的 key-value，在枚举时会先枚举出来;【可使用此特性实现缓存淘汰算法LRU】
+object也有这种特性【Object.keys(),输出的key也是按照声明的先后】
 ```
 
 ##### weakMap
@@ -749,6 +590,7 @@ let，const，class声明的全局变量，不属于顶层对象的属性
 
 无遍历操作（keys(),values(),entries()）,
 无size属性，不支持clear，因此只有get(),set(),has(),delete()
+`1.`weakMap的成员只能是对象
 ```
 
 ##### weakRef
@@ -764,7 +606,9 @@ let wr = new WeakRef(target);
 
 ```typescript
 类似于数组，但成员都是唯一的（成员可以是任何值）
-`1.`可遍历
+`1.` 可遍历
+`2.` 先声明的 key-value，在枚举时会先枚举出来;【可使用此特性实现缓存淘汰算法LRU】
+object也有这种特性【Object.keys(),输出的key也是按照声明的先后】
 ```
 
 ##### weakSet
@@ -779,19 +623,18 @@ let wr = new WeakRef(target);
 ##### 箭头函数
 
 ```typescript
-与普通函数的区别：普通函数的this是动态的，在执行时确定，箭头函数的this是静态的，在声明时确定，指向所在上下文【上层作用域】的this
+与普通函数的区别：普通函数的this是动态的，在执行时确定，箭头函数的this是静态的，在声明时确定，指向所在上下文【全局作用域，函数作用域】的this
 
 `1.` 箭头函数没有自己的this对象
-     内部的this是定义时上层作用域中的this`【箭头函数内部的this指向是固定的】`
+     内部的this是定义时上层作用域中的this`【箭头函数内部的this指向所在作用域的this】`
 `2.`不可以当作构造函数【因为没有this】
 `3.`不可以使用arguments对象
 `4.`不可以使用yield命令
-
 `5.`不存在super，new.target
 `6.`因为没有自己的this，所以不能用call，apply，bind这些方法改变this的指向
 
 `不适用场合：`
-`1.`对象中的属性是箭头函数且内部使用this，this会指向对象所在的作用域【全局对象】
+`1.`对象中的属性是箭头函数且内部使用this，this会指向对象所在的上下文
      const cat = {
           lives: 9,
           jumps: () => {
@@ -948,7 +791,6 @@ for...in : 也可实现反射
 
 `设计目的:`
 `0.`将程序中的反射汇总到一起Reflect
-
 `1.`将Object对象中一些属于内部的方法(Object.defineProperty),放到Reflect对象上。
     现阶段某些方法同时在Object和Reflect上，未来新方法只部署在Reflect对象上，也就是在Reflect上
     获取语言内部的方法
@@ -1019,7 +861,7 @@ function makeIterator(array) {
 `1.` 内置执行器
 `2.` 更好的语义
 `3.` 更广的实用性
-     yield命令后面只能跟Thunk函数/Promise对象，async函数的await命令后面，可以是Promise和        原始类型值【会自动转换成Promise.resolve(值)】
+     yield命令后面只能跟Thunk函数/Promise对象，async函数的await命令后面，可以是Promise和原始类型值【会自动转换成Promise.resolve(值)】
 `4.` 返回的是Promise
 
 `可实现多次重复尝试`：
@@ -1059,25 +901,3 @@ import _ from 'lodash'   // 加载default，并重命名为_
 import是静态执行，因此想要实现运行时导入：import(***).then(**)
 
 ```
-
-
-
-------
-
-### Vue
-
-------
-
-##### 发布订阅模式
-
-```
-1- 闭包dep,添加 __ob__ 属性(引用value,有自己的dep)
-2- 数组：劫持方法(对于添加属性的方法[push,unshift,splice(，，value)]进行劫持观测；
-      (pop,shift,sort,reverse直接进行依赖更新))。
-3- $set /$delete ,用 __ob__.dep 进行依赖更新 
-
-路径：'./definePropoty'
-```
-
-发布订阅模式
-

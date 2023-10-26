@@ -18,9 +18,7 @@ var trap = function (height) {
             box[i] = left;
             continue;
         }
-        if (height[i] > left) {
-            left = height[i];
-        }
+        left = Math.max(left, height[i]);
         box[i] = left;
     }
     for (let i = height.length - 1; i >= 0; i--) {
@@ -29,9 +27,7 @@ var trap = function (height) {
             box[i] = Math.min(right, box[i]);
             continue;
         }
-        if (height[i] > right) {
-            right = height[i];
-        }
+        right = Math.max(right, height[i]);
         box[i] = Math.min(right, box[i]);
         result += box[i] - height[i];
     }

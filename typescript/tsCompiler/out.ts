@@ -1,1 +1,0 @@
-import {cbbEdit}from'tui-iframe'

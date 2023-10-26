@@ -147,7 +147,7 @@ myPromise.resolve = function resolve(value) {
     });
     return pro3;
 };
-myPromise.reject = function rehject(value) {
+myPromise.reject = function reject(value) {
     if (value instanceof myPromise) {
         return value;
     }
@@ -174,14 +174,7 @@ myPromise.prototype.catch = function (e) {
     return this.then(null, e);
 };
 myPromise.prototype.finally = function (callBack) {
-    return this.then(
-        (value) => {
-            return myPromise.resolve(callBack()).then(() => value);
-        },
-        (reason) => {
-            return myPromise.reject(callBack()).then(() => new Error(reason));
-        }
-    );
+    return this.then(callBack, callBack);
 };
 myPromise.all = function (promises) {
     let promises = Array.from(promises);
@@ -204,7 +197,6 @@ myPromise.all = function (promises) {
                     },
                     (reason) => {
                         reject(reason);
-                        return;
                     }
                 );
             }

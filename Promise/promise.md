@@ -238,6 +238,33 @@ class Promise{
 }
 ```
 
+# Promise拒绝事件
+
+[`rejectionhandled`](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/rejectionhandled_event):
+
+当 Promise 被拒绝、并且在 `reject` 函数处理该 rejection 之后会派发此事件。
+
+[`unhandledrejection`](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/unhandledrejection_event):
+
+当 Promise 被拒绝，但没有提供 `reject` 函数来处理该 rejection 时，会派发此事件。
+
+```
+window.addEventListener(
+  "unhandledrejection",
+  (event) => {
+    /* 你可以在这里添加一些代码，以便检查
+     event.promise 中的 promise 和
+     event.reason 中的 rejection 原因 */
+
+    event.preventDefault();
+  },
+  false,
+);
+
+```
+
+
+
 # async
 
 ```typescript

@@ -16,7 +16,7 @@ customElements.define('my-element', class extends HTMLElement {
     super();
   }
   connectedCallback() {
-    // here the element has been inserted into the DOM
+    // 元素插入DOM
   }    
   disconnectCallback(){
       //元素从DOM中移除的时候将会调用
@@ -32,14 +32,6 @@ const el = customElements.get('my-element');
 const myElement = new el();  // same as document.createElement('my-element');
 document.body.appendChild(myElement);
 ```
-
-### 自定义元素的参数
-
-```
-
-```
-
-
 
 ## template
 
@@ -66,8 +58,6 @@ template:
 <slot name="插槽名"></slot>    //具名插槽
 <slot></slot>                 //默认插槽
 ```
-
-
 
 ## Shadow DOM
 
@@ -103,6 +93,9 @@ set prop(v){
     this.setAttribute(prop，v)
 }
 当属性更改时，调用 this.setAttribute(属性，值)，更改组件属性，引起变化周期函数 attributeChangedCallback(...),响应变化 
+
+                                                                           
+不支持对象
 ```
 
 ### 子->父
@@ -121,5 +114,35 @@ dom.addEventListener('事件名称',(e)=>{
 })
 ```
 
+## 渐进式增强组件  :is
+
+```typescript
+<button is="my-button">
+    
+class MyButton extends HTMLButtonElement {}
+```
+
+
+
 ## 跨组件通讯
 
+# 生命周期
+
+## disconnectedCallback
+
+```
+父-> 子： 先触发父的hook，再触发子的hook
+```
+
+# 缺点
+
+1. 属性  获取/设置
+
+   ```
+   webComponents 认为本质上属性只能是字符串形式，所以当设置/获取属性时，都会被转换成字符串。
+   所以对于对象，数组这类的数据只能拆分成单一属性。
+   ```
+
+   `解决`：组件继承，初始化数据
+
+2. 

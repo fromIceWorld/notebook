@@ -36,7 +36,6 @@ var buildTree = function (preorder, inorder) {
                 i++;
                 right = deep(index + 1, end);
             }
-
             return new TreeNode(target, left, right);
         }
     }

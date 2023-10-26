@@ -30,12 +30,12 @@
 var wordBreak = function (s, wordDict) {
     let set = new Set(wordDict),
         dp = new Array(s.length),
-        pre = new Set([-1]);
+        preIndex = new Set([-1]);
     for (let i = 0; i < s.length; i++) {
-        for (let index of pre) {
+        for (let index of preIndex) {
             if (set.has(s.slice(index + 1, i + 1))) {
                 dp[i] = true;
-                pre.add(i);
+                preIndex.add(i);
             }
         }
     }

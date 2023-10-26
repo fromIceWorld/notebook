@@ -29,7 +29,7 @@ var maxScoreSightseeingPair = function (values) {
         result = 0;
     for (let i = 0; i < values.length; i++) {
         if (i == 0) {
-            pre = values[0] + 0;
+            pre = values[i] + i;
         } else {
             result = Math.max(result, pre + values[i] - i);
             pre = Math.max(pre, values[i] + i);

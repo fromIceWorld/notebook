@@ -22,6 +22,14 @@
 */
 
 /**
+ * 一分为二：
+ * 1. 一部分有序，一部分无序，
+ * 2. 有序中查找，
+ * 3. 无序再一分为二，一部分有序，一部分无序
+ *
+ *
+ */
+/**
  * @param {number[]} nums
  * @param {number} target
  * @return {number}

@@ -35,16 +35,16 @@ const boxs = [
 // 将 物品分为两个状态：装进包【 包的体积减小，价值增加
 //                    不装进包【 包的体积不变，价值不变【和之前的状态一样】
 
-let excel = Array.from(new Array(boxs.length + 1), () =>
+let dp = Array.from(new Array(boxs.length + 1), () =>
     new Array(package + 1).fill(0)
 );
 
-for (let i in boxs) {
+for (let i = 0; i < boxs.length; i++) {
     let [w, v] = boxs[i]; //取出 质量和价值
     for (let j = 1; j <= package; j++) {
-        excel[Number(i) + 1][j] = Math.max(
-            excel[Number(i) + 1 - 1][j], // 不装进包，值就是 前一个最大值
-            j >= w ? excel[Number(i) + 1 - 1][j - w] + v : 0 //如果能装进包，包的容积减少，；前一个背包容积减小的最大值 加上当前物品的值
+        dp[i + 1][j] = Math.max(
+            dp[i][j], // 不装进包，值就是 前一个最大值
+            j >= w ? dp[i][j - w] + v : 0 //如果能装进包，包的容积减少，；前一个背包容积减小的最大值 加上当前物品的值
         );
     }
 }

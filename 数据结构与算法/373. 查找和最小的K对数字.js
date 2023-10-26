@@ -83,7 +83,6 @@ var kSmallestPairs = function (nums1, nums2, k) {
             nums1[a[0]] + nums2[a[1]] - (nums1[b[0]] + nums2[b[1]]),
         max: k,
     });
-
     let m = nums1.length,
         n = nums2.length;
     for (let i = 0; i < Math.min(m, k); i++) {
