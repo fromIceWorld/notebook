@@ -161,46 +161,80 @@ class Promise{
 ### .all
 
 ```typescript
-class Promise{
-    static all(promises){
-        let pro5 = new Promise((resolve, reject)=>{
-            let result = new Array(promises.length), index = 0,len = promises.length;
-            for(let proIndex in promises){
-                Promise.resolve(promises[proIndex]).then((value)=>{
-                    if(index < len){
-                        result[proIndex] = value;
-                        index++;
-                    }else{
-                        resolve(result)
-                    }
-                },(reason)=>{
-                    reject(reason);
-                })
-            }
-        })
-        return pro5
-    }
-}
+const p1 = Promise.resolve(3);
+const p2 = 1337;
+const p3 = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    ① resolve("foo");
+    ② reject("foo");
+  }, 1000);
+});
+
+Promise.all([p1, p2, p3]).then((values) => {
+  console.log(values); // [3, 1337, "foo"]
+},(values)=>console.log('拒绝',values)); "foo"
+
+① `当所有的promise都resolved时，走resolve后续,返回Array类型的resolved值`  [3, 1337, "foo"]
+② `当有一个promiserejected，走reject后续，只返回一个rejected值`  "foo"
+```
+
+### allSettled
+
+```typescript
+const promise1 = Promise.resolve(3);
+const promise2 = new Promise((resolve, reject) =>
+  setTimeout(reject, 100, 'foo'),
+);
+const promises = [promise1, promise2];
+
+Promise.allSettled(promises).then((results) =>
+  console.log(results)
+);
+[
+    { status: "fulfilled", value: 3 },
+    { status: "rejected", reason: "foo" }
+]
+
+`当所有的Promise都已敲定，返回的promise将被兑现，带有描述每个promise结果的对象数组`
 ```
 
 ### .race
 
 ```typescript
-class Promise{
-    static race(promises){
-        let pro5 = new Promise((resolve, reject)=>{
-            let result = new Array(promises.length), index = 0,len = promises.length;
-            for(let proIndex in promises){
-                Promise.resolve(promises[proIndex]).then((value)=>{
-                        resolve(result)
-                },(reason)=>{
-                    reject(reason);
-                })
-            }
-        })
-        return pro5
-    }
-}
+const promise1 = new Promise((resolve, reject) => {
+  setTimeout(resolve, 500, 'one');
+});
+
+const promise2 = new Promise((resolve, reject) => {
+  ① setTimeout(resolve, 100, 'two');
+  ② setTimeout(reject, 100, 'two');   
+});
+
+Promise.race([promise1, promise2]).then((value) => {
+  console.log('resolved', value);
+},(value)=>{console.log('rejected',value);});
+
+
+`返回的promise 会随着第一个敲定的promise而敲定,
+第一个敲定的promise是兑现，返回的promise 是兑现，
+第一个promise是拒绝，返回的promise就是拒绝`
+```
+
+### .any
+
+```typescript
+const promise1 = Promise.reject(0);
+const promise2 = new Promise((resolve,reject) => setTimeout(reject, 100, 'quick'));
+const promise3 = new Promise((resolve,reject) => setTimeout(reject, 500, 'slow'));
+
+const promises = [promise1, promise2, promise3];
+
+Promise.any(promises)
+    .then((value) => console.log('resolve',value),
+          (value)=>console.log('reject',value));
+当输入的promises为空，返回的promise将会是拒绝[rejected]
+当输入的任何一个promise兑现[resolved]时，返回的promise将会兑现[resolved]。
+当输入的promise都拒绝[rejected]时，返回的promise将会拒绝[rejected]，并返回一个`AggregateError`,包含拒绝的原因。    
 ```
 
 ## then
@@ -214,8 +248,6 @@ then的执行逻辑取决于依赖的promise的决议【resolve，reject】，
 ------------------------------------------
 有新的promise时，当前then的决议权应该交给新promise【将resolve，reject交给新promise】
 ```
-
-
 
 ## catch
 
@@ -262,8 +294,6 @@ window.addEventListener(
 );
 
 ```
-
-
 
 # async
 

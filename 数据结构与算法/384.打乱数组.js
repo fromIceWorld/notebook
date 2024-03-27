@@ -39,9 +39,7 @@ Solution.prototype.shuffle = function () {
     let result = [...this.origin];
     for (let i = 0, end = this.origin.length - 1; i <= end; end--) {
         let index = Math.floor(Math.random() * (end + 1));
-        let cache = result[end];
-        result[end] = result[index];
-        result[index] = cache;
+        [result[index], result[end]] = [result[end], result[index]];
     }
     return result;
 };

@@ -35,8 +35,7 @@ var dominantIndex = function (nums) {
             maxIndex = 0;
         } else {
             if (nums[i] > max) {
-                pre = max;
-                max = nums[i];
+                [pre, max] = [max, nums[i]];
                 maxIndex = i;
             } else {
                 pre = Math.max(pre, nums[i]);

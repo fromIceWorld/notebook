@@ -18,7 +18,13 @@ function a(name=2,age = 9){}: a.length == 0
 a.length 无法通过赋值修改。
 ```
 
+##### 闭包
+
+闭包让开发者可以从内部函数访问外部函数的作用域
+
 ##### 原型，原型链，构造函数，实例
+
+面向对象
 
 [MDN](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Inheritance_and_the_prototype_chain)
 
@@ -163,8 +169,6 @@ function runEval(){
 
 ###### 箭头函数
 
-`箭头函数` 的 `this` 被设置为他被创建时的环境
-
 ```typescript
 `箭头函数的this声明时已经确定`，继承自执行上下文[全局作用域，普通函数作用域]的this;
 a = {
@@ -184,7 +188,7 @@ a = {
 `this的指向是在运行时确定的`，按照最基础的理解，谁调用函数，this就指向谁。
 ```
 
-##### toString / valueOf  -> 隐式 / 显示转换
+##### Symbol.toPrimitive/ valueOf/toString   -> 隐式 / 显示转换
 
 [MDN](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Symbol/toPrimitive)
 
@@ -218,8 +222,8 @@ a = {
     isCapture:默认为false，在冒泡阶段发生，为true在捕获阶段发生。
     el.addEventListener(event, callback, isCapture);
     在callback里可用event.stopPropagation() / event.cancelBubble = true             取消继续传播
-`取消默认事件`:
-	e.preventDefault() / e.returnValue = false
+`取消默认事件`:e.preventDefault() 例如：按钮点击取消form表单的提交事件。
+`默认操作是否已被阻止`：e.returnValue
 ```
 
 ##### **垃圾回收机制**
@@ -244,8 +248,8 @@ a = {
 ##### **防抖 / 节流**
 
 ```typescript
-`防抖：`触发事件一定时间后，执行函数，如果一直触发，会一直更新时间，不会触发函数。
-`节流：`触发事件后，在一定的时间内再次触发事件无效，只有执行函数后才能再次触发。
+`防抖：`触发事件一定时间后，执行函数，如果一直触发，会一直更新时间，不会触发函数。【输入框】
+`节流：`触发事件后，在一定的时间内再次触发事件无效，只有执行函数后才能再次触发。【按钮,接口】
 
 `防抖：` function debondce(fn, time){
     	   let timer;
@@ -331,13 +335,17 @@ AMD 与 CMD的不同:
 
 ------
 
-##### 字符串转换为数字
+##### 进制转换
 
 ```javascript
+1. 返回浮点数
 let st = '1.23b'
 parseFloat(st)  //从头开始解析数字，直到遇到非数字
-parseInt('101', 2) => 5
-(5).toString(2) => 101
+
+2. 非10进制转换为10进制
+	parseInt('101', 2) => 5
+3. 10转换为n进制
+	(5).toString(2) => 101
 ```
 
 ##### 滚轮事件
@@ -362,52 +370,37 @@ detail，wheelDelta：与滚轮速率无关，无用属性
 i++
 ```
 
+##### 相等判断
+
+```typescript
+Object.is()
+```
+
 ##### in
 
 ```typescript
+prop in object
+`prop`:一个字符串类型或者 symbol 类型的属性名或者数组索引（非 symbol 类型将会强制转为字符串）。
+`objectName`:检查它（或其原型链）是否包含具有指定名称的属性的对象。
+
 `判断某个属性是否在对象及其原型链上`
-in 会查到 自身的可枚举属性
-in 会去对象的 原型链上寻找属性
 ```
 
-##### for循环
+##### 获取自身属性
+
+###### for...in [目标是可迭代对象的key]
 
 ```typescript
-`for循环中，设置循环变量的部分是父作用域，循环体内部是一个单独的作用域`
-for循环中的let 和var：
-var声明的变量是全局的，每一次循环，都改变全局变量，循环体内的变量指向全局变量
-let生命的变量只在当前循环内有效，`每一次循环都会声明一个变量`，循环体内的变量指向上级作用域声明的变量
-
-------------------------------------------------------------------
-
-for/in：遍历对象`自身可继承，枚举`属性【操作的是`key`,对象：key，数组：index,字符串：index】
-可配合 对象.hasOwnProperty(key),选择是否过滤原型上的值。
-
-for/of：调用Iterator接口【Symbol.iterator()】产生遍历器【操作的是`value`】
-forEach：
-
-for/in，for：break可跳出整个循环，continue可跳出当前循环，return会报错`return只能放在函数中`。
-forEach，map，filter：break,continue会报错，return跳出当前循环。不跳出整个函数
-for/of：break,continue，return 正常`return只能放在函数中`
-
-Object.keys():返回对象`自身所有`可枚举属性
-
-
-重要：`return 需要放在函数中😥😥;break,continue 在for/while循环中`
-```
-
-###### for...in
-
-```typescript
-for...in 会遍历出原型链上的属性【但不会遍历Symbol属性的key】
+for...in 会遍历出`可迭代对象`除Symbol以外的`可枚举属性`【包括继承的属性】
 
 let B = Symbol('BBB')
-function Ap(age,sex){
+function A(age,sex){
     this.age = age;
     this.sex = sex;
 }
-Ap.prototype.go = function(){}
-Ap[B] = 'bbb'
+A.prototype.go = function(){}
+a = new A('age','sex');
+A[B] = 'bbb'
 for(let key in a){console.log(key)}
 
 `
@@ -415,6 +408,40 @@ age
 sex
 go
 `
+```
+
+###### for...of [可迭代对象]
+
+```typescript
+for...of语句在`可迭代对象`（包括 Array，Map，Set，String，TypedArray，arguments 对象等等）上
+创建一个迭代循环，调用自定义迭代钩子，并为每个不同属性的值执行语句
+```
+
+###### Object.keys
+
+```typescript
+Object.keys():返回对象`自身所有`可枚举属性[不包括Symbol属性]
+```
+
+###### Object.getOwnPropertyNames
+
+###### Object.getOwnPropertySymbols
+
+```typescript
+`for..in..`:获取除Symbol外的可枚举属性(包括原型上继承的属性) 数组的length不可枚举
+`keys:`获取对象自身的可枚举属性[不包括Symbols属性] // 不会获取数组的length属性
+`getOwnPropertyNames:`获取对象自身的属性【包括不可枚举属性，但不包括Symbol属性】
+                           // 会获取数组的length属性
+`getOwnPropertySymbols:`获取自身所有的Symbols属性
+```
+
+###### Object.entries、Object.fromEntries
+
+```typescript
+`Object.entries`:将对象转换为数组类型的key：value 
+                   【可转换为 Map =  new Map(Object.entries())】
+`Object.fromEntries`：将数据类型的key:vakue 转换为对象
+                   【将map转换为object obj = Object.fromEntries(Map)】
 ```
 
 ##### Object.create
@@ -425,8 +452,9 @@ params description 新对象的描述符
 
 Object.create(
     {age:12},
-    {sex:{value:'man'}, 
-     name:{value:'新对象'，enumerable：true，writable:false}
+    {
+        sex:{value:'man'}, 
+        name:{value:'新对象'，enumerable：true，writable:false}
     }
 )
 创建一个新对象，使用现有的对象来提供新创建对象的__proto__
@@ -440,28 +468,6 @@ Object.create(
                 【对象的原型也不能被修改】
                 但是对象属性如果是对象，那么子对象如果未被freeze，内部属性是可修改的
 `Object.seal` :封闭一个属性，阻止新属性的添加，并将现有属性标记为不可配置，当前属性的值只要是可修改的，就可以改写【configable:false】__proto__属性也不可修改               
-```
-
-##### Object.entries、Object.fromEntries
-
-```typescript
-`Object.entries`:将对象转换为数组类型的key：value 
-                   【可转换为 Map =  new Map(Object.entries())】
-`Object.fromEntries`：将数据类型的key:vakue 转换为对象
-                   【将map转换为object obj = Object.fromEntries(Map)】
-```
-
-##### Object.getOwnPropertyNames
-
-##### Object.getOwnPropertySymbols
-
-##### Object.keys
-
-```typescript
-`keys:`获取对象自身的可枚举属性 // 不会获取数组的length属性
-`getOwnPropertyNames:`获取对象自身的属性【包括不可枚举属性，但不包括Symbol属性】
-                           // 会获取数组的length属性
-`getOwnPropertySymbols:`获取自身所有的Symbols属性
 ```
 
 ##### Object.defineProperty
@@ -514,11 +520,315 @@ Array.from(new Array(m), ()=>new Array(n));
 `Math.ceil()`：向上取整
 				Math.ceil(2.5) => 3
 				Math.ceil(-2.5)=> -2
-`Math.round()`:四舍五入取整【向最近的那个整数取整，当是0.5时，取正无穷方向的整数】
+`Math.round()`:四舍五入向上取整【向最近的那个整数取整，当是0.5时，取正无穷方向的整数】
 				Math.round(2.5) => 3
 				Math.round(2.4) => 2
 				Math.round(-2.5) => -2【👆】
 				Math.round(-2.6) => -3
+```
+
+### Symbol
+
+#### 属性
+
+##### Symbol.asyncIterator
+
+```typescript
+`Symbol.asyncIterator 符号指定了一个对象的默认异步迭代器。如果一个对象设置了这个属性，它就是异步可迭代对象，可用于for await...of循环。`
+
+const myAsyncIterable = new Object();
+myAsyncIterable[Symbol.asyncIterator] = async function* () {
+  yield "hello";
+  yield "async";
+  yield "iteration!";
+};
+
+(async () => {
+  for await (const x of myAsyncIterable) {
+    console.log(x);
+    // expected output:
+    //    "hello"
+    //    "async"
+    //    "iteration!"
+  }
+})();
+```
+
+##### Symbol.prototype.description
+
+```typescript
+`description 是一个只读属性，它会返回 Symbol 对象的可选描述的字符串。`
+console.log(Symbol('desc').description);
+// Expected output: "desc"
+```
+
+##### Symbol.hasInstance
+
+```typescript
+`Symbol.hasInstance 用于判断某对象是否为某构造器的实例。因此你可以用它自定义 instanceof 操作符在某个类上的行为。`
+
+class Array1 {
+  static [Symbol.hasInstance](instance) {
+    return Array.isArray(instance);
+  }
+}
+
+console.log([] instanceof Array1);
+// Expected output: true
+```
+
+##### Symbol.isConcatSpreadable
+
+```typescript
+`内置的 Symbol.isConcatSpreadable 符号用于配置某对象作为 Array.prototype.concat() 方法的参数时是否展开其数组元素。`
+const alpha = ['a', 'b', 'c'];
+const numeric = [1, 2, 3];
+let alphaNumeric = alpha.concat(numeric);
+
+console.log(alphaNumeric);
+// Expected output: Array ["a", "b", "c", 1, 2, 3]
+
+numeric[Symbol.isConcatSpreadable] = false;
+alphaNumeric = alpha.concat(numeric);
+
+console.log(alphaNumeric);
+// Expected output: Array ["a", "b", "c", Array [1, 2, 3]]
+
+```
+
+##### Symbol.iterator
+
+```typescript
+`Symbol.iterator 为每一个对象定义了默认的迭代器。该迭代器可以被 for...of 循环使用。`
+const iterable1 = {};
+iterable1[Symbol.iterator] = function* () {
+  yield 1;
+  yield 2;
+  yield 3;
+};
+console.log([...iterable1]);
+// Expected output: Array [1, 2, 3]
+```
+
+##### Symbol.match
+
+```typescript
+`Symbol.match 指定了匹配的是正则表达式而不是字符串。String.prototype.match() 方法会调用此函数`
+此函数还用于标识对象是否具有正则表达式的行为，
+startsWith/endsWith/includes会检查第一个参数是否是正则表达式，是正则就抛错。
+
+const regexp1 = /foo/;
+// console.log('/foo/'.startsWith(regexp1));
+// Expected output (Chrome): Error: First argument to String.prototype.startsWith must not be a regular expression
+// Expected output (Firefox): Error: Invalid type: first can't be a Regular Expression
+// Expected output (Safari): Error: Argument to String.prototype.startsWith cannot be a RegExp
+
+regexp1[Symbol.match] = false;
+
+console.log('/foo/'.startsWith(regexp1));
+// Expected output: true
+
+console.log('/baz/'.endsWith(regexp1));
+// Expected output: false
+```
+
+##### Symbol.matchAll
+
+```typescript
+`Symbol.matchAll 内置通用（well-known）符号指定方法返回一个迭代器，该迭代器根据字符串生成正则表达式的匹配项。此函数可以被 String.prototype.matchAll() 方法调用。`
+const str = "2016-01-02|2019-03-07";
+const numbers = {
+  *[Symbol.matchAll](str) {
+    for (const n of str.matchAll(/[0-9]+/g)) yield n[0];
+  },
+};
+console.log(Array.from(str.matchAll(numbers)));
+// ["2016", "01", "02", "2019", "03", "07"]
+
+```
+
+##### Symbol.replace
+
+```typescript
+`Symbol.replace 这个属性指定了当一个字符串替换所匹配字符串时所调用的方法。String.prototype.replace() 方法会调用此方法。`
+class Replace1 {
+  constructor(value) {
+    this.value = value;
+  }
+  [Symbol.replace](string) {
+    return `s/${string}/${this.value}/g`;
+  }
+}
+
+console.log('foo'.replace(new Replace1('bar')));
+// Expected output: "s/foo/bar/g"
+
+```
+
+##### Symbol.search
+
+```typescript
+`Symbol.search 指定了一个搜索方法，这个方法接受用户输入的正则表达式，返回该正则表达式在字符串中匹配到的下标，这个方法由以下的方法来调用 String.prototype.search()。`
+class caseInsensitiveSearch {
+  constructor(value) {
+    this.value = value.toLowerCase();
+  }
+  [Symbol.search](string) {
+    return string.toLowerCase().indexOf(this.value);
+  }
+}
+
+console.log('foobar'.search(new caseInsensitiveSearch('BaR')));
+// expected output: 3
+```
+
+##### Symbol.species
+
+```typescript
+`知名的 Symbol.species 是个函数值属性，其被构造函数用以创建派生对象。`
+class MyArray extends Array {
+  // 覆盖 species 到父级的 Array 构造函数上
+  static get [Symbol.species]() {
+    return Array;
+  }
+}
+var a = new MyArray(1, 2, 3);
+var mapped = a.map((x) => x * x);
+
+console.log(mapped instanceof MyArray); // false
+console.log(mapped instanceof Array); // true
+
+`Symbol.species的作用在于，实例对象在运行过程中，需要再次调用自身的构造函数时，会调用该属性指定的构造函数。它主要的用途是，有些类库是在基类的基础上修改的，那么子类使用继承的方法时，作者可能希望返回基类的实例，而不是子类的实例。`
+```
+
+##### Symbol.split
+
+```typescript
+`Symbol.split 指向 一个正则表达式的索引处分割字符串的方法。这个方法通过 String.prototype.split() 调用`
+class Split1 {
+  constructor(value) {
+    this.value = value;
+  }
+  [Symbol.split](string) {
+    const index = string.indexOf(this.value);
+    return `${this.value}${string.substring(0, index)}/${string.substring(
+      index + this.value.length,
+    )}`;
+  }
+}
+
+console.log('foobar'.split(new Split1('foo')));
+// Expected output: "foo/bar"
+
+```
+
+##### Symbol.toPrimitive
+
+```typescript
+`Symbol.toPrimitive 是内置的 symbol 属性，其指定了一种接受首选类型并返回对象原始值的表示的方法。它被所有的强类型转换制算法优先调用。`
+const object1 = {
+  [Symbol.toPrimitive](hint) {
+    if (hint === 'number') {
+      return 42;
+    }
+    return null;
+  },
+};
+
+console.log(+object1);
+// Expected output: 42
+
+```
+
+##### Symbol.toStringTag
+
+```typescript
+`Symbol.toStringTag 内置通用（well-known）symbol 是一个字符串值属性，用于创建对象的默认字符串描述。它由 Object.prototype.toString() 方法内部访问。`
+class ValidatorClass {
+  get [Symbol.toStringTag]() {
+    return 'Validator';
+  }
+}
+
+console.log(Object.prototype.toString.call(new ValidatorClass()));
+// Expected output: "[object Validator]"
+```
+
+##### Symbol.unscopables
+
+```typescript
+`Symbol.unscopables 指用于指定对象值，其对象自身和继承的从关联对象的 with 环境绑定中排除的属性名称。`
+var keys = [];
+
+with (Array.prototype) {
+  keys.push("something");
+}
+console.log(keys);["something"]
+Object.keys(Array.prototype[Symbol.unscopables]);
+// ["copyWithin", "entries", "fill", "find", "findIndex",
+//  "includes", "keys", "values"]
+```
+
+#### 方法
+
+##### Symbol.prototype[@@toPrimitive]
+
+```typescript
+`[@@toPrimitive]() 方法可将 Symbol 对象转换为原始值。`
+const sym = Symbol("example");
+sym === sym[Symbol.toPrimitive](); // true
+```
+
+##### Symbol.for()
+
+```typescript
+`Symbol.for(key) 方法会根据给定的键 key，来从运行时的 symbol 注册表中找到对应的 symbol，如果找到了，则返回它，否则，新建一个与该键关联的 symbol，并放入全局 symbol 注册表中。`
+```
+
+##### Symbol.keyFor()
+
+```typescript
+`Symbol.keyFor(sym) 方法用来获取全局 symbol 注册表中与某个 symbol 关联的键。`
+// 创建一个全局 Symbol
+var globalSym = Symbol.for("foo");
+Symbol.keyFor(globalSym); // "foo"
+
+var localSym = Symbol(123);
+Symbol.keyFor(localSym); // undefined，
+```
+
+**由于类型转换可能发生微妙的错误，对于`Symbol`和`BigInt`,javascript禁止了隐式类型转换。因此提供了以下方法👇**
+
+##### Symbol.prototype.toString()
+
+```typescript
+`toString() 方法返回当前 symbol 对象的字符串表示。`
+symbol 原始值不能转换为字符串，所以只能先转换成它的包装对象，再调用 toString() 方法：
+
+Symbol("foo") + "bar";
+// TypeError: Can't convert symbol to string
+Symbol("foo").toString() + "bar";
+// "Symbol(foo)bar"，就相当于下面的：
+Object(Symbol("foo")).toString() + "bar";
+// "Symbol(foo)bar"
+```
+
+##### Symbol.prototype.valueOf()
+
+```typescript
+`valueOf() 方法返回当前 symbol 对象所包含的 symbol 原始值。`
+多数类型的对象在某些操作下都会自动的隐式调用自身的 valueOf() 方法或者 toString() 方法来将自己转换成一个原始值，但 symbol 对象不会这么干，symbol 对象无法隐式转换成对应的原始值.
+
+Object(Symbol("foo")) + "bar";
+// TypeError: can't convert symbol object to primitive
+// 无法隐式的调用 valueOf() 方法
+
+Object(Symbol("foo")).valueOf() + "bar";
+// TypeError:  can't convert symbol to string
+// 手动调用 valueOf() 方法，虽然转换成了原始值，但 symbol 原始值不能转换为字符串
+
+Object(Symbol("foo")).toString() + "bar";
+// "Symbol(foo)bar"，需要手动调用 toString() 方法才行
 ```
 
 ### ES6
@@ -749,17 +1059,12 @@ proxy是在目标对象之前假设一层拦截
 
 ```typescript
 `1.` Proxy对target进行代理后，target中的this会指向Proxy代理
-        const target = {
-          m: function () {
-            console.log(this === proxy);
-          }
-        };
-        const handler = {};
+        
 
-        const proxy = new Proxy(target, handler);
+handle中无劫持函数，this指向proxy
 
-        target.m() // false
-        proxy.m()  // true
+proxy.m `m中的this指向proxy`
+ 
 `2.` proxy拦截函数内部的this，指向的是handler对象
         const handler = {
           get: function (target, key, receiver) {
@@ -772,15 +1077,12 @@ proxy是在目标对象之前假设一层拦截
             return true;
           }
         };
-
         const proxy = new Proxy({}, handler);
 
-        proxy.foo
-        // true
-        // Hello, foo
+handle中有劫持，this指向handle         
+proxy.name `this指向handler`
 
-        proxy.foo = 1
-        // true
+当对proxy进行操作时，如果经过劫持，进入handle内的函数，this就是函数的this,如果没经过劫持，this指向proxy        
 ```
 
 ##### Reflect
@@ -869,6 +1171,32 @@ function makeIterator(array) {
 
 `缺点：`
 任何一个await语句后面的Promise对象变为reject状态，那么整个async函数都会中断执行
+
+`async函数的执行逻辑`
+1. async函数如果没有返回值，会默认返回一个promise【"fulfilled"状态,result是undefind】。
+2. 如果返回一个非promise时，将会返回一个promise【"fulfilled"状态，result是value】。
+3. 如果返回一个promise时，将会代替默认返回的promise。
+async function a(){
+    console.log(123);
+    return 666;
+}
+a() 返回 【"fulfilled"状态,result是666】的promise
+async function a(){
+    console.log(123);
+}
+a() 返回【"fulfilled"状态,result是undefind】的promise
+async function a(){
+    console.log(123);
+    return new Promise((resolve,reject)=>{
+        setTimeout(()=>{resolve(100)},5000)
+    })
+}
+a() 返回【"pending"状态,result是undefind】的promise，在5秒后promise变为【"fulfilled"状态,result是100】
+async function a(){
+    console.log(123);
+    throw Error(123)
+}
+a()返回【"rejected"状态,result是Error信息】的promise
 ```
 
 ##### generator

@@ -97,13 +97,13 @@ function resolvePro(pro2, x, resolve, reject) {
             if (typeof then == 'function') {
                 then.call(
                     x,
-                    function resolvePromise(y) {
+                    function xResolveFn(y) {
                         if (!used) {
                             used = true;
                             resolvePro(pro2, y, resolve, reject);
                         }
                     },
-                    function rejectPromise(r) {
+                    function xRejectFn(r) {
                         if (!used) {
                             used = true;
                             reject(r);
@@ -180,7 +180,7 @@ myPromise.all = function (promises) {
     let promises = Array.from(promises);
     return new myPromise((resolve, reject) => {
         let result = new Array(promises.length);
-        let index = 0;
+        let count = 0;
         if (result.length == 0) {
             resolve(result);
         } else {
@@ -188,9 +188,9 @@ myPromise.all = function (promises) {
                 // 处理非Promise
                 myPromise.resolve(promises[i]).then(
                     (data) => {
-                        if (index < promises.length) {
+                        if (count < promises.length) {
                             result[i] = data;
-                            index++;
+                            count++;
                         } else {
                             resolve(result);
                         }
