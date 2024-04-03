@@ -103,7 +103,10 @@ function Child(){}
 ```javascript
 作用域是代码执行过程中取值的区域，分为全局作用域和函数作用域，在一段代码中，会有一个全局作用域和n个函数作用域层层嵌套，在代码执行过程中作用域会不断的入栈和出栈，【维持全局作用域与函数作用域之间的关系,就是执行上下文】。
 
-`在执行代码的过程中，【变量对象 / 作用域链 / this】保证我们的取值`
+VO:变量对象
+AO：活动对象
+
+`在执行代码的过程中，【变量对象 / 作用域链 / this】保证我们的取值规则`
 var scope = "global scope";
 function checkscope(){
     var scope2 = 'local scope';
@@ -420,7 +423,7 @@ for...of语句在`可迭代对象`（包括 Array，Map，Set，String，TypedAr
 ###### Object.keys
 
 ```typescript
-Object.keys():返回对象`自身所有`可枚举属性[不包括Symbol属性]
+Object.keys():返回`对象自身所有可枚举属性`[不包括Symbol属性]
 ```
 
 ###### Object.getOwnPropertyNames
@@ -493,6 +496,15 @@ Object.create(
 slice函数【string,Array】:slice(start,end?)`复制子集合，从start开始，end结束，不取end,`
 split函数【string】：split(值或者正则,限制返回数组的最大数量)`不影响原字符串，切割后返回数组`
 splice函数【Array】splice(start,numbe?,...add)：`操作数组本身本身,从start坐标开始，切割指定数量的值,为null则全切割，第三个参数后都是往数组添加的值：最终返回切割的值`                   
+```
+
+### requestAnimationFrame
+
+```typescript
+告诉浏览器——你希望执行一个动画，并且要求浏览器在下次重绘之前调用指定的回调函数更新动画。该方法需要传入一个回调函数作为参数，该回调函数会在浏览器下一次重绘之前执行。
+`优化动画/程序性能，浏览器的显示频率来作为其动画动作的频率,动画不会掉帧，自然流畅`
+
+回调函数的参数：回调函数被触发的时间,在同一个帧中的多个回调函数，都会接收一个相同的时间戳。
 ```
 
 ### 数组

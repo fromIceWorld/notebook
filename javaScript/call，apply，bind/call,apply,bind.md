@@ -64,6 +64,8 @@ Function.prototype.apply2 = function(context,arr){
 
 改变函数作用域，返回改变后的函数，并且可以分批传参
 
+`函数只可以bind第一次`
+
 ```typescript
 第一个参数是，函数要绑定的作用域，后续的参数是 传入的参数
 Function.prototype.bind = function(arg){
