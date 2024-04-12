@@ -103,8 +103,8 @@ function Child(){}
 ```javascript
 作用域是代码执行过程中取值的区域，分为全局作用域和函数作用域，在一段代码中，会有一个全局作用域和n个函数作用域层层嵌套，在代码执行过程中作用域会不断的入栈和出栈，【维持全局作用域与函数作用域之间的关系,就是执行上下文】。
 
-VO:变量对象
-AO：活动对象
+`VO`: 变量对象  variable object
+`AO`：活动对象  active object
 
 `在执行代码的过程中，【变量对象 / 作用域链 / this】保证我们的取值规则`
 var scope = "global scope";
@@ -113,36 +113,34 @@ function checkscope(){
     return scope2;
 }
 checkscope();
-
-1- 代码执行，进入全局执行上下文(globalContext),globalContext入栈,stack  = [globalContext]
-2- 执行代码，创建globalContext.vo = {
-    scope："global scope"，
-    checkscope：checkscope
-   }，checkscope函数的作用域在创建时已经存在checkscope.[[Scope]] = [globalContext.vo]
-3- 执行checkscope函数，进入checkscope的执行上下文，checkscope入栈
-	stack  = [globalContext，checkscopeContext]
-4- 初始化checkscopeContext = {
-    AO:{
-        arguments:{
-            length:0
-        },
-        scope2:undefined
-    },
-    Scope:checkscope.[AO, [Scope]],
-}
-5- 执行checkscope函数，赋值AO
-    checkscopeContext = {
-        AO:{
-            arguments:{
-                length:0
-            },
-            scope2:'local scope'
-        },
-        Scope:checkscope.[AO, [Scope]],
-}
-6- 在return时，返回scope2，函数执行完毕，checkscopeContect出栈
-	stack  = [globalContext]
 ```
+
+1. 代码执行，进入全局执行上下文(globalContext),globalContext入栈,stack  = [globalContext]
+2. 执行代码，创建`globalContext.vo = {
+       scope："global scope"，
+       checkscope：checkscope
+      }`,checkscope函数的作用域在创建时已经存在checkscope.[[Scope]] = [globalContext.vo]
+3. 执行checkscope函数，进入checkscope的执行上下文，checkscope入栈
+   	stack  = [globalContext，checkscopeContext]
+4. 初始化`checkscopeContext = {
+       AO:{
+           arguments:{
+               length:0
+           },
+           scope2:undefined
+       },
+       Scope:checkscope.[AO, [Scope]],
+   }`
+5. 执行checkscope函数，赋值AO`checkscopeContext = {
+           AO:{
+               arguments:{
+                   length:0
+               },
+               scope2:'local scope'
+           },
+           Scope:checkscope.[AO, [Scope]],
+   }`
+6. 在return时，返回scope2，函数执行完毕，checkscopeContect出栈`stack  = [globalContext]`
 
 ##### 改变js执行上下文
 
@@ -365,14 +363,6 @@ detail，wheelDelta：与滚轮速率无关，无用属性
 `deltaY:最可靠。`
 ```
 
-##### 运算符优先级
-
-```typescript
-++i
-> < 
-i++
-```
-
 ##### 相等判断
 
 ```typescript
@@ -394,7 +384,7 @@ prop in object
 ###### for...in [目标是可迭代对象的key]
 
 ```typescript
-for...in 会遍历出`可迭代对象`除Symbol以外的`可枚举属性`【包括继承的属性】
+for...in 会遍历出除Symbol以外的`可枚举属性`【包括继承的属性】
 
 let B = Symbol('BBB')
 function A(age,sex){
@@ -501,7 +491,7 @@ splice函数【Array】splice(start,numbe?,...add)：`操作数组本身本身,�
 ### requestAnimationFrame
 
 ```typescript
-告诉浏览器——你希望执行一个动画，并且要求浏览器在下次重绘之前调用指定的回调函数更新动画。该方法需要传入一个回调函数作为参数，该回调函数会在浏览器下一次重绘之前执行。
+告诉浏览器——你希望执行一个动画，并且要求浏览器在下次重绘之前调用指定的回调函数更新动画。该方法需要传入一个回调函数作为参数，该`回调函数会在浏览器下一次重绘之前执行`。
 `优化动画/程序性能，浏览器的显示频率来作为其动画动作的频率,动画不会掉帧，自然流畅`
 
 回调函数的参数：回调函数被触发的时间,在同一个帧中的多个回调函数，都会接收一个相同的时间戳。
@@ -612,14 +602,18 @@ console.log(alphaNumeric);
 
 ```typescript
 `Symbol.iterator 为每一个对象定义了默认的迭代器。该迭代器可以被 for...of 循环使用。`
-const iterable1 = {};
+const iterable1 = {
+    name:'aa',
+    age:12
+};
 iterable1[Symbol.iterator] = function* () {
-  yield 1;
-  yield 2;
-  yield 3;
+	const keys = Object.keys(this);
+    for(let key of keys){
+        yield this[key];
+    }
 };
 console.log([...iterable1]);
-// Expected output: Array [1, 2, 3]
+// Expected output: Array ['aa',12]
 ```
 
 ##### Symbol.match
@@ -749,7 +743,8 @@ const object1 = {
 
 console.log(+object1);
 // Expected output: 42
-
+console.log(''+object1);
+// Expected output: 'null'
 ```
 
 ##### Symbol.toStringTag

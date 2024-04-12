@@ -46,14 +46,13 @@ type VerboseTypeChain = never extends 'linbudu'
 
 ```
 
-
-
 ### type 与 interface
 
-```typescript
-一般interface 用来描述对象、类的结构，
-而type用来将一个函数签名、一组联合类型、一个工具类型等等抽离成一个完整独立的类型。
-```
+1. type使用交叉类型实现继承，interface使用extends实现继承
+2. type支持联合类型，交叉类型和映射类型等高级用法，interface主要用于定义对象的结构和类的契约
+3. type可以使用类型操作符(联合类型|，交叉类型&，索引访问类型)而interface不支持这些操作
+4. interface可以用类来实现(implements)，而type不能被类实现
+5. interface支持 declaration merging【声明多个相同的interface,最终会取U集】，而type alias不支持
 
 #### interface的合并
 
@@ -118,12 +117,102 @@ type Derived = IBase & {
 };
 ```
 
-
-
 ### 原始类型
 
+```typescript
+const name: string = 'linbudu';
+const age: number = 24;
+const male: boolean = false;
+const undef: undefined = undefined;
+const nul: null = null;
+const obj: object = { name, age, male };
+const bigintVar1: bigint = 9007199254740991n;
+const bigintVar2: bigint = BigInt(9007199254740991);
+const symbolVar: symbol = Symbol('unique');
 ```
 
+### 数组类型
+
+```typescript
+const arr1: string[] = [];
+const arr2: Array<string> = [];
+```
+
+#### 元组
+
+```typescript
+const arr6: [string, number?, boolean?] = ['linbudu'];
+```
+
+#### 具名元组
+
+```typescript
+const arr7: [name: string, age: number, male: boolean] = ['linbudu', 599, true];
+```
+
+### 对象的类型
+
+```typescript
+interface IDescription {
+  name: string;
+  age: number;
+  male: boolean;
+}
+
+const obj1: IDescription = {
+  name: 'linbudu',
+  age: 599,
+  male: true,
+};
+```
+
+### object、Object 以及 { }
+
+#### Object
+
+```typescript
+原型链的顶端是 Object 以及 Function，这也就意味着所有的原始类型与对象类型最终都指向 Object，在 TypeScript 中就表现为 Object 包含了所有的类型：
+// 对于 undefined、null、void 0 ，需要关闭 strictNullChecks
+const tmp1: Object = undefined;
+const tmp2: Object = null;
+const tmp3: Object = void 0;
+
+const tmp4: Object = 'linbudu';
+const tmp5: Object = 599;
+const tmp6: Object = { name: 'linbudu' };
+const tmp7: Object = () => {};
+const tmp8: Object = [];
+```
+
+#### object
+
+```typescript
+object 的引入就是为了解决对 Object 类型的错误使用，它代表所有非原始类型的类型，即数组、对象与函数类型这些
+const tmp17: object = undefined;
+const tmp18: object = null;
+const tmp19: object = void 0;
+
+const tmp20: object = 'linbudu';  // X 不成立，值为原始类型
+const tmp21: object = 599; // X 不成立，值为原始类型
+
+const tmp22: object = { name: 'linbudu' };
+const tmp23: object = () => {};
+const tmp24: object = [];
+```
+
+#### {}
+
+```typescript
+它意味着任何非 null / undefined 的值：
+const tmp25: {} = undefined; // 仅在关闭 strictNullChecks 时成立，下同
+const tmp26: {} = null;
+const tmp27: {} = void 0; // void 0 等价于 undefined
+
+const tmp28: {} = 'linbudu';
+const tmp29: {} = 599;
+const tmp30: {} = { name: 'linbudu' };
+const tmp31: {} = () => {};
+const tmp32: {} = [];
 ```
 
 
@@ -878,3 +967,4 @@ Proxy中的 Reflet 符合
 `静态成员的元数据信息存储于构造函数，而实例成员的元数据信息存储于构造函数的原型上`
 ```
 
+### 依赖注入，控制反转
