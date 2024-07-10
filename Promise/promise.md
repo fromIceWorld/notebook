@@ -121,6 +121,8 @@ class Promise{
 
 ### .resolve
 
+value是promise / 类promise / 其他
+
 ```typescript
 class Promise{
     static resolve(value){
@@ -298,14 +300,91 @@ window.addEventListener(
 # async
 
 ```typescript
-`标识一个函数是异步函数，返回一个promise`
+`async是Generator 的语法糖`
+相较于Generator：
+`1.` 内置执行器
+`2.` 更好的语义
+`3.` 更广的实用性
+     yield命令后面只能跟Thunk函数/Promise对象，async函数的await命令后面，可以是Promise和原始类型值【会自动转换成Promise.resolve(值)】
+`4.` 返回的是Promise
+
+`可实现多次重复尝试`：
+配合try...catch 内部循环
+
+`缺点：`
+任何一个await语句后面的Promise对象变为 reject 状态，那么整个async函数都会中断执行
+
+`async函数的执行逻辑`
+0. 
+1. async函数如果没有返回值，会默认返回一个promise【"fulfilled"状态,result是undefind】。
+2. 如果返回一个非promise时，将会返回一个promise【"fulfilled"状态，result是value】。
+3. 如果返回一个promise时，将会代替默认返回的promise。
+async function a(){
+    console.log(123);
+    return 666;
+}
+a() 返回 【"fulfilled"状态,result是666】的promise
+async function a(){
+    console.log(123);
+}
+a() 返回【"fulfilled"状态,result是undefind】的promise
+async function a(){
+    console.log(123);
+    return new Promise((resolve,reject)=>{
+        setTimeout(()=>{resolve(100)},5000)
+    })
+}
+a() 返回【"pending"状态,result是undefind】的promise，在5秒后promise变为【"fulfilled"状态,result是100】
+async function a(){
+    console.log(123);
+    throw Error(123)
+}
+a()返回【"rejected"状态,result是Error信息】的promise
 ```
 
 # await
 
 ```typescript
+async function a(){
+    console.log(12);
+    await b();
+    console.log('b end');
+    await c();
+    console.log('c end')
+}
+async function b(){
+    console.log('b')
+    return 2;
+}
+async function c(){
+    console.log('c')
+    return 2;
+}
+a();
+new Promise((resolve,reject)=>{
+    console.log('promise');
+    resolve(1)
+}).then(res=>{
+    console.log('then')
+})
+console.log(6)
+
+`
+12
+ b
+ promise
+ 6
+ b end
+ c
+ then
+ c end
+`
+```
+
+
+
+```typescript
 `用于分割async中代码的执行顺序，使异步像同步一样执行`
-1.await后面表达式返回的是普通值，
-2.await 后面表达式返回promise
+await 会在执行完当前行的代码后，把下面的代码整体放入微任务队列中;
 ```
 

@@ -124,6 +124,9 @@ function resolvePro(pro2, x, resolve, reject) {
     }
 }
 
+// TODO: value 是 promise
+// TODO: value 是类promise
+// TODO：其他类型数据
 myPromise.resolve = function resolve(value) {
     if (value instanceof myPromise) {
         return value;

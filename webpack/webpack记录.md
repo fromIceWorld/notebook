@@ -46,5 +46,100 @@
 
 3. 
 
-   
+
+# 模块联邦
+
+
+
+# css-loadedr 和 style-loader
+
+webpack只处理js之间的依赖关系。.css文件不是一个js模块，需要loader处理。
+
+## css-loader
+
+```
+只处理 import/require(),@import/url 引入的内容。
+```
+
+base.css
+
+```css
+.bg{
+ backgroud:#000;
+}
+```
+
+.js
+
+```
+const style = require('./base.css');
+console.log(style,'css');
+// ['./src/base.css', '.bg{ backgroud:#000;}']
+```
+
+## style-loader
+
+```typescript
+通过js创建一个style标签，里面包含一些样式。
+style-loader不能单独使用，因为它不负责解析css之前的依赖关系。
+`每个loader的功能都是单一的，各自独立拆分`
+```
+
+# postcss-loader
+
+```
+补充css样式各种浏览器内核前缀。
+```
+
+# url-loader 和 file-loader
+
+1. 打包图片。
+2. 在html页面中通过标签引入的图片和其他静态资源，即使配置了url-loader，webpack也不会去处理，需要使用`html-loader`
+
+## url-loader
+
+url-loader封装了file-loader。
+
+1. 文件 < limit参数，url-loader将文件转为DataURL；
+2. 文件>  limit参数，url-loader会调用file-loader进行处理，参数也会直接传给file-loader
+
+`把字体文件转成 base64 是浏览器无法识别的，这是错误的操作.`
+
+可以将大的图片单独打包，小的图片进行base64编码后在打包。[减少请求]
+
+## file-loader
+
+file-loader可以解析项目中的url引入(不局限于css)，根据配置将图片拷贝到相应的路径，修改打包后的文件引用路径，使之指向正确的文件。
+
+可以指定要复制和放置资源文件的位，可以就近管理图片，使用相对路径而不用担心部署时的URL问题。
+
+# babel-loader
+
+将ES6语法转化成ES5
+
+# ts-loader
+
+编译.ts，配置项在tsconfig.json中
+
+# html-loader
+
+处理js中引入的html资源。处理html中引入的资源[url-loader无法处理]
+
+```js
+{
+    test: /\.html$/,
+    loader: 'html-loader',
+    options: {
+        // 除了img的src,还可以继续配置处理更多html引入的资源(不能在页面直接写路径,又需要webpack处理怎么办?先require再js写入).
+        attrs: ['img:src', 'img:data-src', 'audio:src'],
+        minimize: false,
+        removeComments: true,
+        collapseWhitespace: false
+    }
+}
+```
+
+# html-withimg-loader
+
+我们在编译图片时，都是使用`file-loader`和`url-loader`，这两个`loader`都是查找`js`文件里的相关图片资源，但是`html`里面的文件不会查找所以我们`html`里的图片也想打包进去，这时使用`html-withimg-loader`
 

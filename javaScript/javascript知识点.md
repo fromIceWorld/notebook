@@ -186,30 +186,18 @@ a = {
 ###### 普通函数
 
 ```javascript
-`this的指向是在运行时确定的`，按照最基础的理解，谁调用函数，this就指向谁。
+`this的指向是在运行时确定的`，按照最基础的理解，谁调用函数，this就指向谁[即使是proxy代理中，也是]。
 ```
 
 ##### Symbol.toPrimitive/ valueOf/toString   -> 隐式 / 显示转换
 
 [MDN](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Symbol/toPrimitive)
 
-##### 三种事件模型
+##### 事件流
 
-```javascript
-1-DOM0级模型：触发绑定事件，没有传播
-2-IE事件模型：触发绑定事件，向上传播
-1-DOM2级事件模型：捕获->事件处理->冒泡
-```
+`向下捕获`-> `最底层` -> `向上冒泡`
 
-##### 事件委托
-
-```javascript
-依托于事件冒泡的，统一管理机制，在事件冒泡时，冒泡到父级，父级根据event.target识别事件目标，做出相应操作。
-`currentTarget`：事件绑定的元素;
-`target`：事件触发的元素;
-```
-
-##### 捕获 / 冒泡
+###### 捕获 / 冒泡
 
 ```javascript
 `事件传播`：
@@ -218,13 +206,21 @@ a = {
 	从window ->document ->body，向下寻找元素，直到目标元素，
 `事件冒泡`：
 	从目标元素开始，向上传播，直到window
-    `currentTarget`:触发事件的元素
-    `target`：事件绑定的元素
+    `currentTarget`:事件绑定的元素
+    `target`：事件触发的元素
     isCapture:默认为false，在冒泡阶段发生，为true在捕获阶段发生。
     el.addEventListener(event, callback, isCapture);
     在callback里可用event.stopPropagation() / event.cancelBubble = true             取消继续传播
 `取消默认事件`:e.preventDefault() 例如：按钮点击取消form表单的提交事件。
 `默认操作是否已被阻止`：e.returnValue
+```
+
+###### 事件委托
+
+```typescript
+依托于事件冒泡的，统一管理机制，在事件冒泡时，冒泡到父级，父级根据event.target识别事件目标，做出相应操作。
+`currentTarget`：事件绑定的元素;
+`target`：事件触发的元素;
 ```
 
 ##### **垃圾回收机制**
@@ -338,15 +334,33 @@ AMD 与 CMD的不同:
 
 ##### 进制转换
 
-```javascript
+###### 10进制->n进制
+
+```typescript
+(5).toString(2) => 101
+```
+
+###### n进制->10进制
+
+```typescript
+parseInt('101', 2) => 5
+```
+
+###### 解析参数返回浮点数
+
+```typescript
 1. 返回浮点数
 let st = '1.23b'
 parseFloat(st)  //从头开始解析数字，直到遇到非数字
+```
 
-2. 非10进制转换为10进制
-	parseInt('101', 2) => 5
-3. 10转换为n进制
-	(5).toString(2) => 101
+##### 正负判断
+
+Math.sign()
+
+```tsx
+// js实现的是IEEE 754标准所以有-0
+返回:1, -1, 0, -0, NaN.
 ```
 
 ##### 滚轮事件
@@ -365,8 +379,18 @@ detail，wheelDelta：与滚轮速率无关，无用属性
 
 ##### 相等判断
 
-```typescript
-Object.is()
+`Object.is()`  `===`
+
+###### 不同点
+
+- 带符号的0 对比
+- NaN对比
+
+```
+在对比两个数据时，可根据 
+if(Object.is(A,B) || A ===B){
+	return true;
+}
 ```
 
 ##### in
@@ -406,6 +430,7 @@ go
 ###### for...of [可迭代对象]
 
 ```typescript
+`可迭代对象`:有[Symbol.iterator]
 for...of语句在`可迭代对象`（包括 Array，Map，Set，String，TypedArray，arguments 对象等等）上
 创建一个迭代循环，调用自定义迭代钩子，并为每个不同属性的值执行语句
 ```
@@ -491,7 +516,7 @@ splice函数【Array】splice(start,numbe?,...add)：`操作数组本身本身,�
 ### requestAnimationFrame
 
 ```typescript
-告诉浏览器——你希望执行一个动画，并且要求浏览器在下次重绘之前调用指定的回调函数更新动画。该方法需要传入一个回调函数作为参数，该`回调函数会在浏览器下一次重绘之前执行`。
+告诉浏览器——你希望执行一个回调，并且要求浏览器在下次重绘之前调用指定的回调函数。该方法需要传入一个回调函数作为参数，该`回调函数会在浏览器下一次重绘之前执行`。
 `优化动画/程序性能，浏览器的显示频率来作为其动画动作的频率,动画不会掉帧，自然流畅`
 
 回调函数的参数：回调函数被触发的时间,在同一个帧中的多个回调函数，都会接收一个相同的时间戳。
@@ -513,7 +538,7 @@ Array.from(new Array(m), ()=>new Array(n));
 
 ### Math函数
 
-#### 取整
+#### 数字取整
 
 ```typescript
 `Math.floor()`:向下取整(当值小于0时，整数会增加);
@@ -527,13 +552,65 @@ Array.from(new Array(m), ()=>new Array(n));
 				Math.round(2.4) => 2
 				Math.round(-2.5) => -2【👆】
 				Math.round(-2.6) => -3
+`parseInt()`:向0取整,解析返回指定基数的十进制数
+				parseInt(2.5) => 2
+				parseInt(-2.5)=> -2	
 ```
 
-### Symbol
+### Symbol 属性
 
-#### 属性
+#### 用于对象迭代 用的时Generator
+
+##### Symbol.iterator
+
+迭代器协议
+
+```
+满足迭代器协议的要求就可以成为迭代器。
+1.函数执行后返回的对象中next函数
+2.next函数执行后返回{
+	value,
+	done
+}
+```
+
+###### 生成器函数
+
+```typescript
+`Symbol.iterator 为每一个对象定义了默认的迭代器。该迭代器可以被 for...of 循环使用。`
+const iterable1 = {
+    name:'aa',
+    age:12
+};
+iterable1[Symbol.iterator] = function* () {
+	const keys = Object.keys(this);
+    for(let key of keys){
+        yield this[key];
+    }
+};
+console.log([...iterable1]);
+// Expected output: Array ['aa',12]
+```
+
+###### 普通函数
+
+```js
+let a = {};
+a[Symbol.iterator]=function () {
+    return {
+        next:()=>{
+            return {
+                done:Math.random() > 0.5 ? false : true,
+                value:Math.random()
+            }
+        }
+    }
+}
+```
 
 ##### Symbol.asyncIterator
+
+异步可迭代协议
 
 ```typescript
 `Symbol.asyncIterator 符号指定了一个对象的默认异步迭代器。如果一个对象设置了这个属性，它就是异步可迭代对象，可用于for await...of循环。`
@@ -556,15 +633,7 @@ myAsyncIterable[Symbol.asyncIterator] = async function* () {
 })();
 ```
 
-##### Symbol.prototype.description
-
-```typescript
-`description 是一个只读属性，它会返回 Symbol 对象的可选描述的字符串。`
-console.log(Symbol('desc').description);
-// Expected output: "desc"
-```
-
-##### Symbol.hasInstance
+#### Symbol.hasInstance
 
 ```typescript
 `Symbol.hasInstance 用于判断某对象是否为某构造器的实例。因此你可以用它自定义 instanceof 操作符在某个类上的行为。`
@@ -578,6 +647,8 @@ class Array1 {
 console.log([] instanceof Array1);
 // Expected output: true
 ```
+
+#### 数组concat时是否展开
 
 ##### Symbol.isConcatSpreadable
 
@@ -598,23 +669,7 @@ console.log(alphaNumeric);
 
 ```
 
-##### Symbol.iterator
-
-```typescript
-`Symbol.iterator 为每一个对象定义了默认的迭代器。该迭代器可以被 for...of 循环使用。`
-const iterable1 = {
-    name:'aa',
-    age:12
-};
-iterable1[Symbol.iterator] = function* () {
-	const keys = Object.keys(this);
-    for(let key of keys){
-        yield this[key];
-    }
-};
-console.log([...iterable1]);
-// Expected output: Array ['aa',12]
-```
+#### 用以匹配的内置属性
 
 ##### Symbol.match
 
@@ -688,25 +743,6 @@ console.log('foobar'.search(new caseInsensitiveSearch('BaR')));
 // expected output: 3
 ```
 
-##### Symbol.species
-
-```typescript
-`知名的 Symbol.species 是个函数值属性，其被构造函数用以创建派生对象。`
-class MyArray extends Array {
-  // 覆盖 species 到父级的 Array 构造函数上
-  static get [Symbol.species]() {
-    return Array;
-  }
-}
-var a = new MyArray(1, 2, 3);
-var mapped = a.map((x) => x * x);
-
-console.log(mapped instanceof MyArray); // false
-console.log(mapped instanceof Array); // true
-
-`Symbol.species的作用在于，实例对象在运行过程中，需要再次调用自身的构造函数时，会调用该属性指定的构造函数。它主要的用途是，有些类库是在基类的基础上修改的，那么子类使用继承的方法时，作者可能希望返回基类的实例，而不是子类的实例。`
-```
-
 ##### Symbol.split
 
 ```typescript
@@ -725,8 +761,28 @@ class Split1 {
 
 console.log('foobar'.split(new Split1('foo')));
 // Expected output: "foo/bar"
-
 ```
+
+#### Symbol.species
+
+```typescript
+`知名的 Symbol.species 是个函数值属性，其被构造函数用以创建派生对象。`
+class MyArray extends Array {
+  // 覆盖 species 到父级的 Array 构造函数上
+  static get [Symbol.species]() {
+    return Array;
+  }
+}
+var a = new MyArray(1, 2, 3);
+var mapped = a.map((x) => x * x);
+
+console.log(mapped instanceof MyArray); // false
+console.log(mapped instanceof Array); // true
+
+`Symbol.species的作用在于，实例对象在运行过程中，需要再次调用自身的构造函数时，会调用该属性指定的构造函数。它主要的用途是，有些类库是在基类的基础上修改的，那么子类使用继承的方法时，作者可能希望返回基类的实例，而不是子类的实例。`
+```
+
+#### 类型转化
 
 ##### Symbol.toPrimitive
 
@@ -747,7 +803,7 @@ console.log(''+object1);
 // Expected output: 'null'
 ```
 
-##### Symbol.toStringTag
+#### Symbol.toStringTag
 
 ```typescript
 `Symbol.toStringTag 内置通用（well-known）symbol 是一个字符串值属性，用于创建对象的默认字符串描述。它由 Object.prototype.toString() 方法内部访问。`
@@ -761,7 +817,7 @@ console.log(Object.prototype.toString.call(new ValidatorClass()));
 // Expected output: "[object Validator]"
 ```
 
-##### Symbol.unscopables
+#### Symbol.unscopables
 
 ```typescript
 `Symbol.unscopables 指用于指定对象值，其对象自身和继承的从关联对象的 with 环境绑定中排除的属性名称。`
@@ -770,13 +826,21 @@ var keys = [];
 with (Array.prototype) {
   keys.push("something");
 }
-console.log(keys);["something"]
+console.log(keys); //["something"]
 Object.keys(Array.prototype[Symbol.unscopables]);
 // ["copyWithin", "entries", "fill", "find", "findIndex",
 //  "includes", "keys", "values"]
 ```
 
-#### 方法
+#### Symbol方法
+
+##### Symbol.prototype.description
+
+```typescript
+`description 是一个只读属性，它会返回 Symbol 对象的可选描述的字符串。`
+console.log(Symbol('desc').description);
+// Expected output: "desc"
+```
 
 ##### Symbol.prototype[@@toPrimitive]
 
@@ -845,10 +909,11 @@ Object(Symbol("foo")).toString() + "bar";
 ##### let
 
 ```typescript
-`0.`let声明的变量只在let命令所在的代码块内有效
+`0.`let声明的变量只在let命令所在的代码块内有效,var声明的变量作用域是整个闭合的函数
 `1.`let不存在变量提升
 `2.`同一个作用域不可以使用let重复声明同一个变量
 `3.`暂时性死区，只要块级作用域内存在let命令，它所声明的变量就`绑定`这个区域，不再受到外部的影响
+`4.`let声明在脚本的顶级作用域上声明时变量时不会在全局对象上创建属性
      var tmp = 123;
      if (true) {
         tmp = 'abc'; // ReferenceError
@@ -931,7 +996,7 @@ object也有这种特性【Object.keys(),输出的key也是按照声明的先后
 ##### weakSet
 
 ```typescript
-`1.`weakSet的成员只能是对象
+`1.`weakSet的成员只能是对象和Symbol
 `2.`weakSet中的对象都是弱引用，即垃圾回收不考虑weakSet对该对象的引用；
 `3.`weakSet不可遍历，由于weakSet的内部有多少成员取决于垃圾回收有没有运行，运行前后可能个数不一样，，
     而垃圾回收何时运行是不可预测的，所以weakSet不可遍历    
@@ -1014,6 +1079,8 @@ factorial(5, 1) // 120
 
 proxy是在目标对象之前假设一层拦截
 
+***proxy调用前会去查对象的`Symbol.unscopables`，确定哪些属性从with绑定中排除。***
+
 `target`：目标对象
 
 `propKey`：目标属性
@@ -1040,7 +1107,7 @@ proxy是在目标对象之前假设一层拦截
 - `construct`(target, args)：拦截 Proxy 实例作为构造函数调用的操作，比如new proxy(...args)。
    
 `相对于Object.defineProperty优点`:   
-     1. proxy 是监听对象，Object.defineProperty是监听属性
+     1. proxy 是监听对象，Object.defineProperty是定义属性
      2. 可监听数组的变换
      3. 返回的是新对象，可以只操作新对象，Object.defineProperty只能遍历对象属性直接修改
      4. 新标准
@@ -1137,7 +1204,7 @@ for...in : 也可实现反射
 
 统一的接口机制，处理不同的数据结构;
 
-任何数据只要部署`Iterator`接口，就可以完成遍历操作。
+任何数据只要部署`Iterator`接口满足迭代器协议，就可以完成遍历操作。
 
 1. 为各种数据结构提供一个统一的，简便的访问接口
 2. 使得数据结构的成员能够按照某种次序排列
@@ -1177,9 +1244,10 @@ function makeIterator(array) {
 配合try...catch 内部循环
 
 `缺点：`
-任何一个await语句后面的Promise对象变为reject状态，那么整个async函数都会中断执行
+任何一个await语句后面的Promise对象变为 reject 状态，那么整个async函数都会中断执行
 
 `async函数的执行逻辑`
+0. 
 1. async函数如果没有返回值，会默认返回一个promise【"fulfilled"状态,result是undefind】。
 2. 如果返回一个非promise时，将会返回一个promise【"fulfilled"状态，result是value】。
 3. 如果返回一个promise时，将会代替默认返回的promise。
@@ -1210,19 +1278,134 @@ a()返回【"rejected"状态,result是Error信息】的promise
 
 ##### module
 
-ES6的模块是一种`静态定义`，在【代码静态解析阶段】生成
+###### CommonJS
 
-与CommonJS的不同：
+`加载时执行`
 
-1. CommonJS是值的拷贝，module是值的引用
-2. CommonJS是运行时加载，ES6是编译时输出接口
-3. CommonJS的模块require()是同步加载模块，ES6的import命令是异步加载，有一个独立的模块依赖的解析阶段
+- CommonJS的一个模块，就是一个脚本文件,require命令第一次加载该脚本,就会执行整个文件,然后再内存生成一个对象。
+- 用到模块的时候，就会从`exports`中取值
+- 再次`require`, 从内存中取值
+
+**循环加载**
+
+- 加载时执行。
+- 循环加载时,只输出已经执行的部分,未执行的部分不会输出。
+
+**Node例子**
+
+- a.js
+
+  ```typescript
+  console.log('a starting');
+  exports.done = false;
+  const b = require('./b.js');
+  console.log('in a, b.done = %j', b.done);
+  exports.done = true;
+  console.log('a done');
+  ```
+
+- b.js
+
+  ```typescript
+  console.log('b starting');
+  exports.done = false;
+  const a = require('./a.js');
+  console.log('in b, a.done = %j', a.done);
+  exports.done = true;
+  console.log('b done');
+  ```
+
+- main.js
+
+  ```typescript
+  console.log('main starting');
+  const a = require('./a.js');
+  const b = require('./b.js');
+  console.log('in main, a.done = %j, b.done = %j', a.done, b.done);
+  
+  // main starting
+  // a starting
+  // b starting
+  // in b, a.done = false
+  // b done
+  // in a, b.done = true
+  // a done
+  // in main, a.done = true, b.done = true
+  ```
+
+###### ES6 Module
+
+- `生成了指向被加载模块的引用`
+
+- `不会缓存值，而是动态去被加载的模块中取值`
+
+**循环加载**
+
+- m1.mjs
+
+  ```typescript
+  import { bar } from './m2.mjs';
+  console.log('m1.mjs');
+  console.log(bar);
+  export let foo = 'foo';
+  ```
+
+- m2.mjs
+
+  ```typescript
+  import { foo } from './m1.mjs';
+  console.log('m2.mjs');
+  console.log(foo);
+  export let bar = 'bar';
+  ```
+
+- 执行
+
+  ```typescript
+  node m1.mjs
+  // m2.mjs
+  // ReferenceError: Cannot access 'foo' before initialization
+  
+  `ES不关心是否发生了循环加载,只是生成一个执行被加载模块的引用。`
+  使用时未找到就报错。
+  ```
+
+**ES6循环引用**
+
+```typescript
+// a.js
+import {bar} from './b.js';
+export function foo() {
+  bar();  
+  console.log('执行完毕');
+}
+foo();
+
+// b.js
+import {foo} from './a.js';
+export function bar() {  
+  if (Math.random() > 0.5) {
+    foo();
+  }
+}
+
+// '执行完毕'
+// '执行完毕'?
+```
+
+###### 对比
+
+1. CommonJS是`值的拷贝`，生成的值:`exports` 在缓存中，ESmodule是`引用拷贝`,真正需要时再去对应地方找
+2. CommonJS是 require函数 `运行时加载`，ES6是`编译时`直接加载
+3. CommonJS：`动态加载` -> `静态绑定`
+4. ESmodule：`静态加载` -> `动态绑定`
+5. 两者都会执行加载模块的代码,但在循环调用时，已经被引用的模块,都不会重新执行，CommonJS会返回执行中的exports值，而ESmodule仅仅生成引用，只要引用指向的对象存在即可
 
 ```typescript
 内部默认严格模式
 `export----------------------------------------`
 1. export 输出的接口与值是动态绑定的【`CommonJS输出的是值的缓存，不存在动态更新`】
-2. export可以出现在模块的任何位置，只要处于模块的顶层就行，处于块级作用域就会报错【处于条件代码中就无法做动    态优化，违背ES6模块设计的初衷】
+2. export可以出现在模块的任何位置，只要处于模块的顶层就行，处于块级作用域就会报错【处于条件代码中就无法做动态优化，违背ES6模块设计的初衷】
 `import----------------------------------------`
 import {a,b} from './other.module'
 import _ from 'lodash'   // 加载default，并重命名为_
