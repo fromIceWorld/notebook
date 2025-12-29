@@ -1419,3 +1419,35 @@ import _ from 'lodash'   // 加载default，并重命名为_
 import是静态执行，因此想要实现运行时导入：import(***).then(**)
 
 ```
+
+#### dom
+
+##### document.createRange()
+
+[DOM 中的范围](https://juejin.cn/post/6844903769205915661)
+
+获取文档中的一个范围(位置/大小)，通常用于计算大小/范围重合判断或者选择文档中的一部分内容，然后对其操作。
+
+```javascript
+let range = document.createRange();
+```
+
+###### Range.selectNode(dom)
+
+获取dom元素
+
+###### Range.selectNodeContents(dom)
+
+获取dom元素下所有的子元素
+
+###### Range.**getBoundingClientRect**()
+
+获取range范围的坐标信息
+
+###### Range.setStart(dom, startOffset)
+
+设置startContainer 为dom,  startOffset是在startContainer偏移节点数
+
+###### Range.setEnd(dom, endOffset)
+
+设置endContainer 为dom,  endOffset是在endContainer偏移节点数

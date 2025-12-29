@@ -1,10 +1,168 @@
-# 基本类型
+#  基本类型
+
+## 数值类型
+
+### 整型
+
+**类型定义**：`有无符号 + 类型大小(位数)`；
+
+| 长度       | 有符号类型 | 无符号类型 |
+| ---------- | ---------- | ---------- |
+| 8 位       | `i8`       | `u8`       |
+| 16 位      | `i16`      | `u16`      |
+| 32 位      | `i32`      | `u32`      |
+| 64 位      | `i64`      | `u64`      |
+| 128 位     | `i128`     | `u128`     |
+| 视架构而定 | `isize`    | `usize`    |
+
+Rust整型默认使用`i32`
+
+#### 整型溢出
+
+假设有一个`u8`可以存储0-255的值，当你修改为范围外的值时，就会发生整型溢出。
+
+Rust可以显式处理这些整型溢出。
+
+1. `wrapping_*`在所有模式下按照补码循环溢出规则处理。
+2. `checked_*发生溢出，返回`None。
+3. `overflowing_*方法返回该值和一个指示是否存在溢出的布尔值。
+4. `saturating_*可以限定计算后的结果不超过目标类型的最大值/低于最小值。
+
+### 浮点类型
+
+Rust中浮点类型也有基本两种类型`f32`和`f64`，默认浮点类型是`f64`。
+
+浮点数根据 `IEEE-754` 标准实现。`f32` 类型是单精度浮点型，`f64` 为双精度。
+
+### NaN
+
+对于数学上未定义的结果，例如负数取平方根`-42.1.sqr()`,会产生一个特殊的结果。
+
+Rust使用`NaN`来处理这种情况。
+
+### 序列(Range)
+
+Rust提供了简洁的方式来生成连续的数值
+
+### 复数和有理数
+
+
+
+## 字符类型｜布尔类型｜单元类型
+
+### 字符类型(char)
+
+英文中的字母，中文中的汉字。
+
+```rust
+fn main(){
+	let c = 'z';
+	let z = 'ℤ';
+	let g = '国';
+	let heart_eye_cat = '😻'；
+}
+```
+
+### 布尔(bool)
+
+```rust
+fn main(){
+  let t = true;
+  let f:bool = false;
+  if f{
+    println!("这是毫无意义的代码段");
+  }
+}
+```
+
+### 单元类型
+
+单元类型是: `()`, 唯一的值也是`()`。
+
+1. 函数的默认返回值就是`()`，例如`fn main()`返回单元类型。毫无返回值的函数在`Rust`中有单独的定义：`发散函数（diverge function）`[无法收敛的函数]。
+2. 例如`printin!()`的返回值也是单元类型`()`;
+3. 可以 用`()`作为`map`的值，表示我们不关注具体的值，只关注`key`，用法和`struct{}`类似，可以作为一个值用来占位，但是完全不占用任何内存。
+
+## 语句和表达式
+
+`语句`：语句会执行一些操作但不会返回一个值。
+
+`表达式`：表达式会在求值后返回一个值。如果不返回任何值，会隐式返回一个`()`;
+
+`Rust`的函数体是由一系列语句组成，最后由一个表达式来返回值：
+
+```rust
+fn add_with_extra(x:i32,y:i32)->i32{
+  	let x = x+1;   //语句
+    let y = y+1;   //语句
+    x+y      //表达式
+}
+```
+
+### if语句块
+
+```rust
+fn ret_unit_type(){
+  let x = 1;
+  let y = if x % 2 == 1{
+    "odd"
+  }else{
+    "even"
+  };
+  //if语句块也是一个表达式，可以用于赋值，类似三元运算符。
+  let z = if x % 2 == 1{"odd"}else{"even"};
+}
+```
+
+### 函数
+
+函数就是表达式。
+
+### retrun
+
+`return`也是表达式。
+
+## 函数
+
+`Rust`是强类型语言，因此需要为一个函数参数标识出它的具体类型。
+
+1. 函数名和函数变量使用蛇形命名法：`fn add_two()->{}`;
+2. 函数的位置可以随便放，`Rust`不关心在哪里定义了函数，只要定义就可以
+3. 每个参数都需要标注类型。
+
+### 特殊返回类型
+
+1. 函数没返回值，那么返回一个`()`
+
+2. 通过`；`结尾的语句返回一个`()`
+
+3. 永不返回的发散函数`!`
+
+   ```rust
+   fn dead_end()->!{
+     panic!("已经崩溃了,并且不想返回任何东西");
+   }
+   fn forever()->!{
+   	loop{
+       //...
+     };
+   }
+   ```
+
+   
 
 # 复合类型
 
 ## 字符串
 
-`&str`和 `String`
+字符串是由字符组成的连续集合，但是Rust中字符是`Unicode`类型，因此每个字符占据4个字节内存空间，但是在字符串中不一样，字符串是`UTF-8`编码，也就是字符串中的字符所占的字节数是变化的`（1-4）`，这样有助于大幅降低字符串所占用的内存空间。
+
+Rust在语言级别，只有一种字符串类型`str`，但是它通常是以引用类型出现`&str`，也就是字符串切片。虽然在语言级别上只有上述的`str`类型，但是在标准库里，还有多种不同的字符串类型，其中最广的是`String`类型。
+
+1. `str`是语言级别的字符串,【硬编码进可执行文件，无法被修改】
+2. `String`是标准库中的字符串【一个可增长，可改变且具有所有权的UTF_8编码字符串】
+
+**当Rust用户提到字符串时，指的就是`String`类型和`&str`字符串切片类型，这两个都属UTF-8**
 
 ### &str
 
@@ -17,32 +175,404 @@
 - 来自标准库，可修改，长度可变，拥有所有权，使用UTF-8编码，不以空值(null)终止。
 - 实际上是对Vec<u8>的包装，在堆内存上分配的一个字符串。
 
+#### 追加 push/push_str
+
+```rust
+fn main(){
+  let mut s = String::from("Hello");
+  s.push_str("rust");
+  println!("追加字符串 push_str()->{}",s);
+  s.push("!");
+  println!("追加字符 push()->{}");
+}
+```
+
+#### 插入 insert/insert_str
+
+```rust
+fn main(){
+	let mut s = String::from("hello rust!");
+  s.insert(5,',');
+  prinitln!("插入字符串，insert()->{}",s);
+  s.insert_str(6,"I like");
+  println!("插入字符串 insert_str()->{}",s);
+}
+```
+
+#### 替换 replace/replacen/replace_range
+
+```rust
+fn main(){
+	let string = String::from("i like rust,learn rust is 👍");
+  string.replace("rust","Rust"); //全局替换，返回新的字符串
+  string.replacen("rust","Rust",1);//替换n个，返回新字符串
+  string.replace_range(7..8,"R");//替换范围内的字符。操作原来字符串，不返回新的字符串
+}
+```
+
+#### 删除 pop/remove/truncate/clear
+
+```rust
+fn main(){
+  let s = String::from("rust 删除方法");
+  let p1 = s.pop();//删除并返回最后一个字符
+  let p2 = s.remove(0);//删除并返回字符串指定位置的字符（按照字节位置）
+  let p3 = s.truncate(0);//删除字符串中从制定位置开始到结尾的全部字符（字节）
+  let p4 = s.clear();//删除字符串中所有字符
+}
+```
+
+#### 连接  +/+=
+
+`+`是调用了`add`方法。
+
+```rust
+fn main(){
+	let s1 = String::from("hello");
+  let s2 = String::from(" world");
+  let s3 = s1 + &s2;//s1所有权被转移
+}
+```
+
+#### format!
+
+```rust
+fn masin(){
+	let s1 = "hello";
+  let s2 = String::from("rust");
+  let s3 = format!("{}{}",s1,s2);
+  println("{}",s3);
+}
+```
+
+### `String`与`&str`的转换
+
+```rust
+fn main(){
+  let s = String::from("hellow,world");
+  say_hello(&s);
+  say_hello(&s[..]);
+  say_hello(s.as_str());
+}
+fn say_hello(s:&str){
+  println("{}",s);
+}
+```
+
+### 字符串转译
+
+```rust
+fn main(){
+	let byte_escape = "i am writing\x52\x73\x74!";
+  println!("{}",byte_escape);
+}
+```
+
+### 操作UTF-8字符串
+
+#### 字符
+
+```rust
+for c in "中国人".chars(){
+  println!("{}",c);
+}
+```
+
+#### 字节
+
+```rust
+for b in "中国人".bytes(){
+	println!("{}",b);
+}
+```
+
+#### 获取字串
+
+```rust
+// 想要从UTF-8中获取字串是比较复杂的。例如“holla中国人नमस्ते” 
+// 可以使用库：utf8_slice
+```
+
 ### String和&str区别
 
 - String是一个可变引用，&str是对字符串的不可变引用，所以可以更改String的数据，但是不能操作&str的数据。
 - String包含其数据的所有权，而&str没有所有权，它是一个不可变借用。
 
-## 切片slice
+### 字符串深度剖析
 
-slice允许引用集合中一段连续的元素序列，而不用引用整个集合。
+#### 为什么`String`可变，而字符串字面值`str`不可以
+
+因为功能不同，`str`作为不可变的数据会被硬编码到执行文件中，这样让字符串字面值快速而且高效。但是不能把大小未知的文本都放在内存中。
+
+对于`String`类型，为了支持一个可变，可增长的文本片段，需要在堆上分配一块在编译时未知大小的内存来存放内容，这些都是程序运行时完成的：
+
+1. 首先向操作系统请求内存来存放`String`对象
+2. 使用完成后，将内存释放，归还给操作系统
+
+## 元组
+
+1. 元组是由多种类型组合到一起形成的
+2. 元组的长度是固定的
+3. 元组的元素顺序也是固定的
 
 ```rust
-// slice range 的索引必须位于有效UTF-8字符边界内，如果尝试从一个多字节字符的中间位置创建字符串slice,则程序将会因错误而退出。
-
-let s = String::from("hello");
-let slice = &s[3..];
+fn main(){
+	let tup:(i32,f64,u8) = (500,6.4,1);
+  println("输出{}",tup.0);
+  let (x,y,z) = tup;
+  println!("输出{x}{y}{z}");
+}
 ```
 
 ```rust
-let a = [1, 2, 3, 4, 5];
-
-let slice: &[i32] = &a[1..3];
-//slice通过存储第一个集合元素的引用和一个集合总长度。
+fn main(){
+  let s1 = String::from("hello");
+  let (x,y) = get_s(s1);
+  println!("{}{}",x,y);
+}
+fn get_s(s:String)->(String,usize){
+  let len = s.len();
+  return (s,len);
+}
 ```
 
-# 表达式
+## 结构体
 
-## if let
+```rust
+struct User{
+  active:bool,
+  username:String,
+  email:String,
+  sign_in_count:u64,
+}
+```
+
+### 创建结构体实例
+
+1. 初始化时，每个字段都要初始化
+2. 初始化时字段顺序不需要和结构体定义顺序一样
+3. 必须将结构体实例声明为可变的，才可以修改其中的字段，Rust不支持将结构体中某个字段标记为可变。
+
+```rust
+let mut user1 = User{
+  active: true,
+  username: "joy",
+  email: "752856108@QQ.COM",
+  sign_in_count: 64,
+}
+user1.active = false;
+```
+
+### 元组结构体
+
+```rust
+struct Color(i32,i32,i32);
+let black = Color(0,0,0);
+```
+
+### 单元结构体
+
+如果定义了一个类型，但是不关心该类型的内容，只关心它的行为时，就可以使用`单元结构体`。
+
+```rust
+struct AlwaysEqual;
+let subject = AlwaysEqual;
+imp SomeTrait for AlwaysEqual{
+  
+}
+```
+
+## 枚举
+
+1. 通过列举可能的成员定义一个**枚举类型**
+2. **枚举值**是其中一个成员
+
+```rust
+enum PokerSuit{
+  Clubs,
+  Spades,
+  Diamonds,
+  Hearts,
+}
+```
+
+### 使用
+
+```rust
+#[derive(Debug)]
+enum PokerSuit{
+    Clubs(char),
+    Spades(char),
+    Diamonds(char),
+    Hearts(char),
+  }
+  fn main(){
+      let c1 = PokerSuit::Spades('2');
+    let c2 = PokerSuit::Clubs('A');
+    dbg!("{:?}{:?}",c1,c2);
+  }
+```
+
+### Option枚举
+
+Rust使用`Option`枚举来处理空值。 通过编译器帮我们解决null的问题【期望某值不为空但实际上为空的情况】。
+
+1. Option<T>可以理解为一个容器，装有一个值，也可能为空
+
+```rust
+enum Option<T>{
+	Some<T>,
+  None,
+}
+
+```
+
+#### 创建Option
+
+```rust
+let some_value:Option<i32> = Some(5);
+let none_value:Option<i32> = None;
+```
+
+#### 结构Option
+
+```rust
+let some_value:Option<i32> = Some(5);
+match some_value{
+  Some(value) => println!("this value is {}",value);
+  NOne => println!("no value");
+}
+```
+
+#### 使用unwrap
+
+如果确定Option中一定存在值，可以使用`unwrap`获取该值，如果不存在，触发`panic`
+
+```rust
+let some_value:Option<i32> = Some(5);
+let value = some_value.unwrap();
+println!("{}",value);
+```
+
+#### 判断是否有值
+
+可以使用`is_some`和`is_none`判断Option是否有值。
+
+#### map
+
+可以使用`map`对值进行转换
+
+```rust
+let some_value:Option<i32> = Some(5);
+let new_value = some_value.map(|value|value*2);
+```
+
+### Result枚举
+
+```rust
+enum Result<T,E>{
+  Ok(T),
+  Err(E),
+}
+```
+
+```rust
+use std::fs::File;
+
+fn main(){
+	let f = File::open("hello,txt");
+  let f = match f{
+    OK(file)=>file,
+    Err(err)=>{
+      panic!("读取文件失败！{}",err);
+    }
+  }
+}
+```
+
+## 数组
+
+1. 速度很快，但是长度固定的`array`【数组】
+2. 可动态增长的但是有性能损耗的`Vector`【动态数组】
+
+### array
+
+`数组`：将多个类型相同的元素依次组合在一起，就是一个数组。
+
+1. 长度固定
+2. 元素必须有相同的类型
+3. 依次线性排列
+
+### Vector
+
+动态数组
+
+# 流程控制
+
+## 分支 if
+
+## 循环for
+
+| 使用方法                      | 等价使用方式                                      | 所有权     |
+| ----------------------------- | ------------------------------------------------- | ---------- |
+| `for item in collection`      | `for item in IntoIterator::into_iter(collection)` | 转移所有权 |
+| `for item in &collection`     | `for item in collection.iter()`                   | 不可变借用 |
+| `for item in &mut collection` | `for item in collection.iter_mut()`               | 可变借用   |
+
+```rust
+fn main(){
+	for i in 1..=5{
+    if i == 2{
+      continue;
+    }
+    println!("{}",i);
+  }
+}
+```
+
+### 循环中获取索引
+
+```rust
+fn main(){
+  let a = [4,3,2,1];
+  for(i,v) in a.iter().enumerate(){
+    println!("第{}个元素是{}",i+1,v);
+  }
+}
+```
+
+## while循环
+
+```rust
+fn main(){
+	let mut n = 0;
+  while n<5{
+    println!("{}!",n);
+    n = n+1;
+  }
+  println!("跳出循环!");
+}
+```
+
+## loop循环
+
+```rust
+fn main(){
+	let mut n = 0;
+  loop{
+    if n>5{
+			break;
+    }
+    println!("{}",n);
+    n+=1;
+  }
+  println!("跳出循环");
+}
+```
+
+# 模式匹配
+
+## match和if let
 
 ```rust
 if let PATS = EXPR {
@@ -57,7 +587,227 @@ match EXPR {
 }
 ```
 
+## while let
 
+```rust
+let mut stack = Vec::new();
+
+stack.push(1);
+stack.push(2);
+stack.push(3);
+
+while let Some(top) = stack.pop(){
+  printLn!("{}",top);
+}
+// 模式匹配，直到数组为空，弹出None，结束
+```
+
+## for
+
+```rust
+let v = vec!['a','b','c'];
+for (index,value) in v.iter().enumerate(){
+  println!("{} is at {}",value,index);
+}
+```
+
+## let
+
+```rust
+let PATTERN = EXPESION;
+let (x,y,z) = (1,2,3);
+```
+
+## 函数参数
+
+```rust
+fn foo(x:i32){
+  //
+}
+```
+
+# 方法
+
+Rust的方法往往和`结构体`，`枚举`，`特征`一起使用。
+
+## 定义方法
+
+```rust
+struct Circle{
+  x:f64,
+  y:f64,
+  radius:f64,
+}
+impl Circle{
+  fn new(x:f64, y:f64, radius:f64)->Circle{
+    return Circle{
+        x,y,radius
+      };
+	}
+  fn area(&self)->f64{
+    return std::f64::consts::PI * (self.radius * self.radius);
+  }
+}
+```
+
+## self，&self 和 &mut self
+
+1. `self`表示所有权转移
+2. `&self` 表示 不可变借用
+3. `mut &self` 表示可变借用
+
+## 方法名和结构体字段相同
+
+可用来设置属性私有。
+
+```rust
+pub struct Rectangle{
+  width:i32,
+  height:i32,
+}
+impl Rectangle{
+  pub fn width(&self)-> u32{
+    return self.width;
+  }
+}
+```
+
+## 关联函数
+
+定义在`impl`中且没有`self`的函数被称之为关联函数。
+
+因为它没有`self`，不能用`f.read()`的形式调用，因此它是一个函数而不是方法，它又在`impl`中，与结构体紧密关联，因此称为关联函数。
+
+**因为是函数，所以不能用`.`的方式来调用，我们需要用`::`的方式来调用。**
+
+例如`let sq = Rectangle::new(3,3)`
+
+## 多个 impl定义
+
+可以为一个结构体定义多个`impl`块，目的是提供更多的灵活性和代码组织性。例如当方法多了后，可以把相关的方法组织在同一个`impl`块中。
+
+## 为枚举实现方法
+
+```rust
+#[allow(unused)]
+enum Message{
+	Quit,
+  Move {x:i32, y:i32},
+  Write {String},
+  ChangeColor(i32, i32, i32),
+}
+impl Message{
+  fn call(&self){
+    
+	}
+}
+fn main(){
+	let m = Message::Write(String::from("hello"));
+  m.call();
+}
+```
+
+## 为特征【trait】实现方法
+
+```rust
+
+```
+
+# 泛型和特征
+
+## 范型 Generics
+
+### const范型
+
+## 特征 Trait
+
+`特征定义了一组可以被共享的行为，只要实现了特征，就可以使用这组行为。`
+
+### 定义特征
+
+例如文章`Post`和微博`微博`两种内容载体，我们想对对应的内容进行总结，也就是无论文章还是微博，我们都可以进行总结这种行为。那么这个行为是共享的，可以用特征来定义：
+
+```rust
+pub trait Summary{
+  fn summarize(&self)->String;
+}
+pub struct Post{
+  pub title:String,
+  pub author:String,
+  pub content:String,
+}
+impl Summary for Post{
+  fn summarize(&self)->String{
+		format!("文章{},内容:{}",self.title,selt.author);
+  }
+}
+pub struct Weibo{
+  pub username:String,
+  pub content:String,
+}
+impl Summary for Weibo{
+  fn summarize(&self)->String{
+    format!("文章：{},内容:{}",self,content,self.usename);
+  }
+}
+```
+
+### 默认实现
+
+可以在声明特征时，默认实现对应方法，在为其他结构实现时可选择使用默认实现的，也可以选择重载该方法。
+
+### 特征作为函数参数
+
+```rust
+//实现了Summary特征的item参数😊
+pub fn notify(item: &impl Summary){
+	println!("Breaking news!{}",item.summarize);
+}
+```
+
+### 特征约束
+
+```rust
+pub fn notify<T:Summary>(item: &T){
+  println!("Breaking news!{}",item.summarize);
+}
+```
+
+#### 多重约束
+
+```rust
+pub fn notify<T:Summary + Display>(item:&T){}
+```
+
+#### Where约束
+
+```rust
+fn some_function<T: Display + Clone, U: Clone + Debug>(t: &T, u: &U) -> i32 {}
+//⬇️ 
+fn some_function<T, U>(t: &T, u: &U) -> i32
+    where T: Display + Clone,
+          U: Clone + Debug
+{}
+```
+
+#### 使用特征约束有条件地实现方法或特征
+
+```rust
+
+```
+
+### 通过derive派生特征
+
+`#[derive(Debug)]`是一种特征派生语法。被`derive`标记的对象会自动实现对应的默认特征代码，继承相应的功能。
+
+1. 例如`Debug`特征，它有一套自动实现的默认代码，当给一个结构体标记后，就可以使用`peintln!`
+2. `Copy`特征，也有一套自动实现的默认代码，当标记这个类型时，可以让类型自动实现，进而可以调用`copy`方法，进行自我复制。
+
+```rust
+
+```
+
+## 特征对象
 
 # 模块系统
 
@@ -91,7 +841,7 @@ match EXPR {
 ## 项目(package)
 
 - 项目是cargo的一个功能，当执行`cargo new *`时就创建了一个项目。
-- 带有`Cargo.toml`文件的项目用来描述如何构建`crate`，一个项目可以**最多有一个库**类型的`crate`，任意多个二进制可行类型的`crate`。
+- 带有`Cargo.toml`文件的项目用来描述如何构建`crate`，一个项目可以**最多有一个库**类型的`crate`，任意多个二进制类型的`crate`。
 
 ## 包(crate)
 
@@ -105,7 +855,7 @@ match EXPR {
 
 ## 模块(mod)
 
-`use`，`mod`，`pub`，`use`，`super`;
+`use`，`mod`，`pub`，`super`;
 
 - 模块系统来控制作用域和私有性。
 
@@ -121,7 +871,9 @@ match EXPR {
 
 因为结构体和枚举的使用方式不一样，枚举的成员对外不可见，枚举将毫无作用。结构体应用场景复杂，字段可能部分在A处被使用，部分在B处被使用，因此无法确定成员的可见性。
 
+## 工作空间
 
+一个工作空间是由多个`package`组成的集合，它们共享一个`Cargo.lock`文件
 
 # 智能指针
 
